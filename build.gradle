@@ -1,17 +1,26 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.8.0'
-    id 'application'
+    id "org.jetbrains.kotlin.jvm" version "1.8.0"
+    id "java-gradle-plugin"
 }
 
-group = 'me.kyd3snik.test.diff'
-version = '1.0-SNAPSHOT'
+group = "me.kyd3snik"
+version = "0.0.1"
+
+gradlePlugin {
+    plugins {
+        testDiff {
+            id = "me.kyd3snik.teddi"
+            implementationClass = "me.kyd3snik.test.diff.TestDiffPlugin"
+        }
+    }
+}
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    testImplementation 'org.jetbrains.kotlin:kotlin-test'
+    testImplementation "org.junit.jupiter:junit-jupiter:5.8.1"
 }
 
 test {
@@ -20,8 +29,4 @@ test {
 
 kotlin {
     jvmToolchain(11)
-}
-
-application {
-    mainClassName = 'me.kyd3snik.test.diff.MainKt'
 }
