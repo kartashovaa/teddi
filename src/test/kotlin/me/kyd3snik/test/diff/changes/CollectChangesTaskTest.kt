@@ -1,6 +1,7 @@
 package me.kyd3snik.test.diff.changes
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
+
 
 class CollectChangesTaskTest {
 

@@ -18,10 +18,14 @@ gradlePlugin {
 
 repositories {
     mavenCentral()
+    google()
 }
 
 dependencies {
-    testImplementation "org.junit.jupiter:junit-jupiter:5.8.1"
+    compileOnly 'com.android.tools.build:gradle:7.4.0'
+
+    testImplementation "junit:junit:4.13.2"
+    testRuntimeOnly "org.junit.vintage:junit-vintage-engine:5.8.1"
 }
 
 test {

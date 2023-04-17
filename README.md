@@ -2,6 +2,10 @@
 
 Gradle plugin for testing diffs between commits
 
+Runs a test if:
+1) The test file itself is changed
+2) The file containing class under test is changed
+
 ### Usage
 
 ```groovy
@@ -26,12 +30,12 @@ plugins {
 
 ### Get started
 
-Publishing project to maven local and testing last commit
+Publishing project to maven local and testing last commit for "Debug" variant
 
 ```console
 $ git clone https://github.com/kartashov-a/teddi.git
 $ cd teddi
 $ ./gradlew publishToMavenLocal
 $ cd <target-project-dir>
-$ ./gradlew app:testDiffUnitTest -PfromBlob=HEAD~1
+$ ./gradlew app:testDiffDebugUnitTest -PfromBlob=HEAD~1
 ```
