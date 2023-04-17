@@ -1,6 +1,7 @@
 plugins {
     id "org.jetbrains.kotlin.jvm" version "1.8.0"
     id "java-gradle-plugin"
+    id "maven-publish"
 }
 
 group = "me.kyd3snik"
@@ -29,4 +30,16 @@ test {
 
 kotlin {
     jvmToolchain(11)
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = "me.kyd3snik"
+            artifactId = "teddi"
+            version = "0.0.1"
+
+            from components.java
+        }
+    }
 }
