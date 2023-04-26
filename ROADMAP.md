@@ -22,3 +22,6 @@ project.extensions.findByType(ApplicationAndroidComponentsExtension::class.java)
         - Change factory -> ignores test
     - [ ] Same package in different modules
         - change file in module B doesn't trigger tests in module A
+- [ ] Setup workflows
+  - [ ] Publish Java Package with Gradle
+  - [ ] Detekt
