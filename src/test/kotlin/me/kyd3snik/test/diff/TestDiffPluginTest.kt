@@ -1,9 +1,9 @@
 package me.kyd3snik.test.diff
 
+import junit.framework.Assert.assertNotNull
 import org.gradle.testfixtures.ProjectBuilder
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
+import org.junit.Assert.assertTrue
+import org.junit.Test
 
 class TestDiffPluginTest {
 

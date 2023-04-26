@@ -2,7 +2,7 @@ package me.kyd3snik.test.diff.changes
 
 import java.io.File
 
-class GitDiffParser {
+class GitDiffParser(private val rootProjectDir: File) {
 
     fun parse(lines: Sequence<String>): List<FileChange> = lines.mapNotNull(::parse).toList()
 
@@ -16,7 +16,7 @@ class GitDiffParser {
     // TODO: support all types of changes
     //  https://git-scm.com/docs/git-diff#Documentation/git-diff.txt---diff-filterACDMRTUXB82308203
     private fun createFileChange(changeType: String, filePath: String): FileChange? {
-        val file = File(filePath)
+        val file = File(rootProjectDir, filePath)
         return when (changeType) {
             "A" -> FileChange.Created(file)
             "M" -> FileChange.Modified(file)

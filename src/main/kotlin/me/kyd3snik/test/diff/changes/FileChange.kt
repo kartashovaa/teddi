@@ -4,10 +4,11 @@ import java.io.File
 import java.io.Serializable
 
 sealed class FileChange : Serializable {
-    /** related to current project */
+    /** absolute path */
     abstract val file: File
 
     data class Created(override val file: File) : FileChange()
+
     data class Modified(override val file: File) : FileChange()
 
     //TODO: do we really need deleted files?
