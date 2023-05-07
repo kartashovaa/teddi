@@ -3,6 +3,7 @@ package me.kyd3snik.test.diff.changes
 import java.io.File
 import java.io.Serializable
 
+//TODO: useless model, remove it
 sealed class FileChange : Serializable {
     /** absolute path */
     abstract val file: File

@@ -12,6 +12,7 @@ import java.io.*
 @DisableCachingByDefault(because = "May work not as expected for HEAD based blobs")
 abstract class CollectChangesTask : Exec() {
 
+    //TODO: mark as inputs
     private lateinit var fromBlob: Provider<String>
     private lateinit var toBlob: Provider<String>
 
@@ -36,6 +37,7 @@ abstract class CollectChangesTask : Exec() {
 
     private fun setupGitDiff(changesStream: ByteArrayOutputStream) {
         standardOutput = changesStream
+        //TODO: fail if buildCache is enabled and blobs contains relative paths (e.g. HEAD, HEAD~N etc.)
         commandLine("git", "diff", "--name-status", fromBlob.get(), toBlob.get())
     }
 

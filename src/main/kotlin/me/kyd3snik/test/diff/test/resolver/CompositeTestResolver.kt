@@ -11,6 +11,10 @@ class CompositeTestResolver(
         delegates.forEach { delegate -> delegate.resolve(change, filter) }
     }
 
+    override fun resolveAll(changes: List<FileChange>, filter: TestFilter) {
+        delegates.forEach { delegate -> delegate.resolveAll(changes, filter) }
+    }
+
     class Builder {
         private val delegates = ArrayList<TestResolver>()
 
