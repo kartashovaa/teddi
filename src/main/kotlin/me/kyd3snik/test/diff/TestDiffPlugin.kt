@@ -18,17 +18,13 @@ class TestDiffPlugin : Plugin<Project> {
         // TODO: old extension, probably will become deprecated soon
         project.extensions.findByType(AppExtension::class.java)?.let { ext ->
             ext.applicationVariants.all { variant ->
-                TestDiffTask.register(project, variant, changesFile, ext.unitTestVariants)
-                    // TODO: make dependency implicit through changesFile
-                    .configure { it.dependsOn(collectChangesTask) }
+                TestDiffTask.register(project, variant, collectChangesTask.flatMap { it.output })
             }
         }
 
         project.extensions.findByType(LibraryExtension::class.java)?.let { ext ->
             ext.libraryVariants.all { variant ->
-                TestDiffTask.register(project, variant, changesFile, ext.unitTestVariants)
-                    // TODO: make dependency implicit through changesFile
-                    .configure { it.dependsOn(collectChangesTask) }
+                TestDiffTask.register(project, variant, collectChangesTask.flatMap { it.output })
             }
         }
     }
