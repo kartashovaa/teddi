@@ -13,6 +13,7 @@ import java.io.File
 abstract class CollectChangesTask : Exec() {
 
     @get:Input
+    @get:Optional
     abstract val fromBlob: Property<String>
 
     @get:Input
@@ -29,11 +30,9 @@ abstract class CollectChangesTask : Exec() {
         standardOutput = buffer
         isIgnoreExitValue = false
         val toBlob = toBlob.orNull?.takeIf(String::isNotBlank)
-        if (toBlob != null) {
-            commandLine("git", "diff", "--name-status", fromBlob.get(), toBlob)
-        } else {
-            commandLine("git", "diff", "--name-status", fromBlob.get())
-        }
+        val fromBlob = fromBlob.orNull?.takeIf(String::isNotBlank)
+
+        commandLine(listOfNotNull("git", "diff", "--name-status", fromBlob, toBlob))
 
         super.exec()
 
@@ -47,29 +46,24 @@ abstract class CollectChangesTask : Exec() {
 
         fun register(project: Project, output: Provider<RegularFile>): TaskProvider<CollectChangesTask> =
             project.tasks.register("collectChanges", CollectChangesTask::class.java) { task ->
-                task.fromBlob.setFinal(project.fromBlob)
-                task.toBlob.setFinal(project.toBlob)
-                task.output.setFinal(output)
-                task.outputs.upToDateWhen(OutDateForRelativeBlobs())
+                task.fromBlob.set(project.fromBlob)
+                task.fromBlob.finalizeValue()
+                task.toBlob.set(project.toBlob)
+                task.toBlob.finalizeValue()
+                task.output.set(output)
+                task.output.finalizeValue()
+                task.outputs.upToDateWhen(ChangesUpToDateSpec().asTaskSpec())
                 task.workingDir = project.rootDir
                 task.projectDir = project.projectDir
             }
 
         private val Project.fromBlob: Provider<String>
-            get() = project.provider {
-                val fromBlob = properties["fromBlob"] as? String
-                requireNotNull(fromBlob) { "fromBlob isn't set. Usage: ./gradlew app:testDiff -PfromBlob=<commit-hash>" }
-            }
+            get() = project.provider { properties["fromBlob"] as? String }
         private val Project.toBlob: Provider<String?>
             get() = project.provider {
                 val toBlob = properties["toBlob"] as? String
                 toBlob.takeIf { it != "HEAD" }
             }
-
-        private fun <T : Any?> Property<T>.setFinal(value: Provider<T>) {
-            set(value)
-            finalizeValue()
-        }
     }
 }
 

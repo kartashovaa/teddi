@@ -9,12 +9,15 @@ import me.kyd3snik.test.diff.test.resolver.FileSystemLayout
 import me.kyd3snik.test.diff.utils.capitalized
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.file.FileTree
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.logging.LogLevel
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.gradle.api.specs.Spec
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
@@ -38,16 +41,19 @@ abstract class TestDiffTask : DefaultTask() {
     @get:Inject
     abstract val objectFactory: ObjectFactory
 
+    private val logLevel = LogLevel.ERROR
+
     @TaskAction
     fun testDiff() {
         val changesStorage = ChangesStorage(changesFile.get().asFile)
         val changes = objectFactory.fileCollection().from(changesStorage.read())
-        logger.debug(changes.joinToString(prefix = "Changes:\n{\n\t", separator = "\n\t", postfix = "\n}"))
+        logger.log(logLevel, changes.joinToString(prefix = "Changes:\n{\n\t", separator = "\n\t", postfix = "\n}"))
         val testResolver = ClosestClassTestResolver(FileSystemLayout(), testClassesDirs.get())
         val filter = filter.get()
         testResolver.resolve(changes, filter)
 
-        logger.debug(
+        logger.log(
+            logLevel,
             filter.includePatterns.joinToString(prefix = "Includes:\n{\n\t", separator = "\n\t", postfix = "\n}")
         )
     }
@@ -64,6 +70,8 @@ abstract class TestDiffTask : DefaultTask() {
                 val delegateName = "$UNIT_TEST_PREFIX$variantName$UNIT_TEST_SUFFIX"
                 val delegate = project.tasks.named(delegateName, Test::class.java).get()
                 task.changesFile.set(changesFile)
+                // TODO: consider collecting testClassesDirs from variant.unitTestSourceSets
+                //  maybe we don't need to assemble tests to check any changes
                 task.testClassesDirs.set(project.provider { delegate.testClassesDirs.asFileTree })
                 task.filter.set(project.provider { delegate.filter })
                 task.dependsOn(
@@ -76,13 +84,21 @@ abstract class TestDiffTask : DefaultTask() {
                     }
                 )
                 delegate.dependsOn(task) // cancel running delegate if this task failed
+                delegate.onlyIf(SkipIfNoFiltersSpec())
                 task.finalizedBy(delegate)
 
                 task.group = delegate.group
                 task.description = "Runs tests for changed files"
-                //TODO: consider creating separate testing task
-                task.notCompatibleWithConfigurationCache("Unsupported to write tasks that configure other tasks at execution time")
+                // TODO: consider creating separate testing task
+                // TODO: find out in which version this method was added(doesn't work for 7.3.3)
+//                task.notCompatibleWithConfigurationCache("Unsupported to write tasks that configure other tasks at execution time")
             }
         }
     }
+}
+
+class SkipIfNoFiltersSpec : Spec<Task> {
+
+    override fun isSatisfiedBy(element: Task?): Boolean =
+        element !is Test || element.filter.includePatterns.isNotEmpty()
 }
