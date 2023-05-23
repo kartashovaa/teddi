@@ -51,7 +51,7 @@ class TestRegularFileProperty : RegularFileProperty {
 class CollectChangesTaskTest {
 
     private val task = object : CollectChangesTask() {
-        override val fromBlob: Property<String> = DefaultProperty(PropertyHost.NO_OP, String::class.java)
+        override val fromBlob: Property<String?> = DefaultProperty(PropertyHost.NO_OP, String::class.java)
         override val toBlob: Property<String?> = DefaultProperty(PropertyHost.NO_OP, String::class.java)
         override val output: RegularFileProperty = TestRegularFileProperty()
         override fun getExecActionFactory(): ExecActionFactory {

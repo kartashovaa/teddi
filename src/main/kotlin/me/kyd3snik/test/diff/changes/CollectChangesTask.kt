@@ -1,7 +1,6 @@
 package me.kyd3snik.test.diff.changes
 
 import org.gradle.api.Project
-import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
@@ -10,11 +9,14 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 
+
+@Suppress("UnstableApiUsage")
+@UntrackedTask(because = "Inputs are unstable so far")
 abstract class CollectChangesTask : Exec() {
 
     @get:Input
     @get:Optional
-    abstract val fromBlob: Property<String>
+    abstract val fromBlob: Property<String?>
 
     @get:Input
     @get:Optional
@@ -44,12 +46,18 @@ abstract class CollectChangesTask : Exec() {
 
     companion object {
 
-        fun register(project: Project, output: Provider<RegularFile>): TaskProvider<CollectChangesTask> =
-            project.tasks.register("collectChanges", CollectChangesTask::class.java) { task ->
+        private const val TASK_NAME = "collectChanges"
+
+        fun get(project: Project): TaskProvider<CollectChangesTask> =
+            project.tasks.named(TASK_NAME, CollectChangesTask::class.java)
+
+        fun register(project: Project): TaskProvider<CollectChangesTask> =
+            project.tasks.register(TASK_NAME, CollectChangesTask::class.java) { task ->
                 task.fromBlob.set(project.fromBlob)
                 task.fromBlob.finalizeValue()
                 task.toBlob.set(project.toBlob)
                 task.toBlob.finalizeValue()
+                val output = project.layout.buildDirectory.file("test/changes.bin")
                 task.output.set(output)
                 task.output.finalizeValue()
                 task.outputs.upToDateWhen(ChangesUpToDateSpec().asTaskSpec())

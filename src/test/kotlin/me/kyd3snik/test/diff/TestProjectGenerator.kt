@@ -29,13 +29,15 @@ class TestProjectGenerator {
 
     @Test
     fun build() {
-        val projectDir = File("build/sandbox")
-//        unzipResource("build.zip", projectDir)
+        val projectDir = File("build/teddi-test-project")
+//        unzipResource("teddi-test-android-project.zip", projectDir)
+
         val result = GradleRunner.create()
+            .withPluginClasspath()
             .withProjectDir(projectDir)
-            .withGradleVersion("7.5")
+            .withGradleVersion("7.4")
             .forwardOutput()
-            .withArguments("app:testDiffDebugUnitTest", "-PfromBlob=HEAD~1", "-Dorg.gradle.debug=true")
+            .withArguments("app:assemble", "-PfromBlob=HEAD~1", "--stacktrace")
             .build()
 
         assertEquals(TaskOutcome.SUCCESS, result.task(":app:testDebugUnitTest")?.outcome)

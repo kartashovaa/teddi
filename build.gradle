@@ -22,7 +22,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'com.android.tools.build:gradle:7.4.0'
+    testApi 'com.android.tools.build:gradle:7.3.0'
+    compileOnly 'com.android.tools.build:gradle:7.3.0'
 
     testImplementation "junit:junit:4.13.2"
     testRuntimeOnly "org.junit.vintage:junit-vintage-engine:5.8.1"
@@ -39,6 +40,7 @@ kotlin {
 publishing {
     publications {
         maven(MavenPublication) {
+            //TODO: useless, keep only last line
             groupId = "me.kyd3snik"
             artifactId = "teddi"
             version = "0.0.1"
