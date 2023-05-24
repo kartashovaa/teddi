@@ -12,6 +12,7 @@ import java.io.File
 // TODO: add kind of filters here
 //  1) collect only changes related to current project
 //  2) collect only source file changes if tests are not using resources
+//  3) collect changes from sourceSets for current build variant
 @Suppress("UnstableApiUsage")
 @UntrackedTask(because = "Inputs are unstable so far")
 abstract class CollectChangesTask : Exec() {
