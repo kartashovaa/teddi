@@ -22,8 +22,9 @@ repositories {
 }
 
 dependencies {
+    compileOnly 'org.gradle:gradle-tooling-api:latest.release'
     testApi 'com.android.tools.build:gradle:7.3.0'
-    compileOnly 'com.android.tools.build:gradle:7.3.0'
+    compileOnly 'com.android.tools.build:gradle:7.4.0'
 
     testImplementation "junit:junit:4.13.2"
     testRuntimeOnly "org.junit.vintage:junit-vintage-engine:5.8.1"

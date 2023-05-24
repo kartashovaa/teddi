@@ -9,7 +9,9 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 
-
+// TODO: add kind of filters here
+//  1) collect only changes related to current project
+//  2) collect only source file changes if tests are not using resources
 @Suppress("UnstableApiUsage")
 @UntrackedTask(because = "Inputs are unstable so far")
 abstract class CollectChangesTask : Exec() {
