@@ -13,12 +13,15 @@ class TestDiffPlugin : Plugin<Project> {
         val changesFile = CollectChangesTask.register(project).flatMap { it.output }
 
         // TODO: old extension, probably will become deprecated soon
-        project.extensions.findByType(AppExtension::class.java)?.let { ext ->
-            ext.applicationVariants.all { variant -> TestDiffTask.register(project, variant, changesFile) }
-        }
+        project.pluginManager.withPlugin("com.android.application") {
+            project.extensions.findByType(AppExtension::class.java)?.let { ext ->
+                ext.applicationVariants.all { variant -> TestDiffTask.register(project, variant, changesFile) }
+            }
 
-        project.extensions.findByType(LibraryExtension::class.java)?.let { ext ->
-            ext.libraryVariants.all { variant -> TestDiffTask.register(project, variant, changesFile) }
+            project.extensions.findByType(LibraryExtension::class.java)?.let { ext ->
+                ext.libraryVariants.all { variant -> TestDiffTask.register(project, variant, changesFile) }
+            }
+
         }
     }
 }

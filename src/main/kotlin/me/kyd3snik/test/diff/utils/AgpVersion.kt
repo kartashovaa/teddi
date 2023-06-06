@@ -1,6 +1,7 @@
 package me.kyd3snik.test.diff.utils
 
 import org.gradle.api.Project
+import org.gradle.util.GradleVersion
 import java.lang.module.ModuleDescriptor.Version
 import com.android.builder.model.Version as AgpVersion
 

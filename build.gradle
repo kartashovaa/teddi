@@ -1,11 +1,36 @@
 plugins {
     id "org.jetbrains.kotlin.jvm" version "1.8.0"
     id "java-gradle-plugin"
+    id "groovy"
     id "maven-publish"
 }
 
 group = "me.kyd3snik"
 version = "0.0.1"
+
+//testing {
+//    suites {
+
+//        functionTest(JvmTestSuite) {
+//            implementation project
+//            implementation 'com.google.truth:truth:1.1.3'
+//        }
+//    }
+//}
+def integrationTest = sourceSets.create("integrationTest")
+
+def integrationTestTask = tasks.create("testIntegration", Test) {
+    description = "Runs integration tests"
+    group = "verification" //TODO: is it important? for what?
+    testClassesDirs = integrationTest.output.classesDirs
+    classpath = integrationTest.runtimeClasspath
+    dependsOn(tasks.named("publishToMavenLocal"))
+//    mustRunAfter(tasks.named("test")) //TODO: do i need it?
+}
+tasks.named("check") {
+    dependsOn(integrationTestTask)
+}
+
 
 gradlePlugin {
     plugins {
@@ -14,6 +39,8 @@ gradlePlugin {
             implementationClass = "me.kyd3snik.test.diff.TestDiffPlugin"
         }
     }
+
+    testSourceSets(sourceSets.integrationTest)
 }
 
 repositories {
@@ -22,15 +49,19 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'org.gradle:gradle-tooling-api:latest.release'
-    testApi 'com.android.tools.build:gradle:7.3.0'
     compileOnly 'com.android.tools.build:gradle:7.4.0'
 
     testImplementation "junit:junit:4.13.2"
     testRuntimeOnly "org.junit.vintage:junit-vintage-engine:5.8.1"
+
+    integrationTestImplementation project
+    integrationTestImplementation "junit:junit:4.13.2"
+    integrationTestRuntimeOnly "org.junit.vintage:junit-vintage-engine:5.8.1"
+    integrationTestImplementation platform("org.spockframework:spock-bom:2.2-groovy-3.0")
+    integrationTestImplementation "org.spockframework:spock-core"
 }
 
-test {
+tasks.withType(Test).configureEach {
     useJUnitPlatform()
 }
 
@@ -49,4 +80,11 @@ publishing {
             from components.java
         }
     }
+}
+
+// call kotlin code from groovy
+def compileFunctionTestKotlin = tasks.named("compileIntegrationTestKotlin")
+tasks.named("compileIntegrationTestGroovy") {
+    dependsOn compileFunctionTestKotlin
+    classpath += files(compileFunctionTestKotlin.get().outputs.files)
 }
