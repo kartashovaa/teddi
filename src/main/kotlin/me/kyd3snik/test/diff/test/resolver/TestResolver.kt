@@ -1,13 +1,10 @@
 package me.kyd3snik.test.diff.test.resolver
 
-import me.kyd3snik.test.diff.changes.FileChange
+import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.testing.TestFilter
 
 interface TestResolver {
 
-    fun resolve(change: FileChange, filter: TestFilter)
-
-    fun resolveAll(changes: List<FileChange>, filter: TestFilter) =
-        changes.forEach { resolve(it, filter) }
+    fun resolve(changes: FileCollection, filter: TestFilter)
 }
 

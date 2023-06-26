@@ -1,12 +1,17 @@
 package me.kyd3snik.test.diff.changes
 
 import java.io.File
+import java.io.InputStream
 
-class GitDiffParser(private val rootProjectDir: File) {
+class GitDiffParser(private val workingDir: File, private val projectDir: File) {
 
-    fun parse(lines: Sequence<String>): List<FileChange> = lines.mapNotNull(::parse).toList()
+    fun parse(stream: InputStream): List<File> = stream
+        .bufferedReader()
+        .lineSequence()
+        .mapNotNull(::parse)
+        .toList()
 
-    private fun parse(record: String): FileChange? {
+    private fun parse(record: String): File? {
         val regex = Regex("(\\S+)\\s+(\\S+)")
         val result = regex.matchEntire(record)?.groupValues?.takeIf { it.size > 2 }
 
@@ -15,12 +20,9 @@ class GitDiffParser(private val rootProjectDir: File) {
 
     // TODO: support all types of changes
     //  https://git-scm.com/docs/git-diff#Documentation/git-diff.txt---diff-filterACDMRTUXB82308203
-    private fun createFileChange(changeType: String, filePath: String): FileChange? {
-        val file = File(rootProjectDir, filePath)
+    private fun createFileChange(changeType: String, filePath: String): File? {
         return when (changeType) {
-            "A" -> FileChange.Created(file)
-            "M" -> FileChange.Modified(file)
-            "D" -> FileChange.Deleted(file)
+            "A", "M" -> File(workingDir, filePath).relativeTo(projectDir)
             else -> null // TODO: @logging log "Unknown change type $changeType"
         }
     }

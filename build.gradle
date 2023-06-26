@@ -39,10 +39,6 @@ kotlin {
 publishing {
     publications {
         maven(MavenPublication) {
-            groupId = "me.kyd3snik"
-            artifactId = "teddi"
-            version = "0.0.1"
-
             from components.java
         }
     }
