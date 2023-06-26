@@ -3,60 +3,59 @@ package me.kyd3snik.test.diff
 import com.android.build.gradle.api.BaseVariant
 import com.android.builder.core.ComponentType.Companion.UNIT_TEST_PREFIX
 import com.android.builder.core.ComponentType.Companion.UNIT_TEST_SUFFIX
-import me.kyd3snik.test.diff.changes.FileChange
-import me.kyd3snik.test.diff.test.resolver.*
+import me.kyd3snik.test.diff.changes.ChangesStore
+import me.kyd3snik.test.diff.test.resolver.ClosestClassTestResolver
+import me.kyd3snik.test.diff.test.resolver.FileSystemLayout
 import me.kyd3snik.test.diff.utils.capitalized
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
+import org.gradle.api.Task
+import org.gradle.api.file.FileTree
 import org.gradle.api.file.RegularFile
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.logging.LogLevel
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.gradle.api.specs.Spec
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
-import java.io.File
-import java.io.FileInputStream
-import java.io.ObjectInputStream
+import org.gradle.api.tasks.testing.TestFilter
+import javax.inject.Inject
 
 abstract class TestDiffTask : DefaultTask() {
 
-    private lateinit var changesFile: Provider<RegularFile>
-    private lateinit var testsSourceSets: Provider<Set<File>>
+    @get:InputFile
+//    @get:SkipWhenEmpty
+    abstract val changesFile: RegularFileProperty
 
-    private lateinit var delegate: Test
+    @get:Internal
+    abstract val testClassesDirs: Property<FileTree>
+
+    @get: Internal
+    abstract val filter: Property<TestFilter>
+
+    @get:Inject
+    abstract val objectFactory: ObjectFactory
+
+    private val logLevel = LogLevel.ERROR
 
     @TaskAction
     fun testDiff() {
-        val changes = readFileChanges()
-        logChanges(changes)
-        val testResolver = buildTestResolver()
-        testResolver.resolveAll(changes, delegate.filter)
-        logIncludes()
-    }
+        val changesStore = ChangesStore(changesFile.get().asFile)
+        val changes = objectFactory.fileCollection().from(changesStore.read())
+        logger.log(logLevel, changes.joinToString(prefix = "Changes:\n{\n\t", separator = "\n\t", postfix = "\n}"))
+        val testResolver = ClosestClassTestResolver(FileSystemLayout(), testClassesDirs.get())
+        val filter = filter.get()
+        testResolver.resolve(changes, filter)
 
-    private fun buildTestResolver() = CompositeTestResolver.build {
-        addDelegate(ClosestClassTestResolver(delegate.testClassesDirs.asFileTree))
-        for (testSourceRoot in testsSourceSets.get()) {
-            addDelegate(SelfTestResolver(testSourceRoot))
-        }
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun readFileChanges() = ObjectInputStream(FileInputStream(changesFile.get().asFile))
-        .readObject() as List<FileChange>
-
-    private fun logIncludes() {
-        logger.debug(
-            delegate.filter.includePatterns.joinToString(
-                prefix = "Includes:\n{\n\t", separator = "\n\t", postfix = "\n}"
-            )
+        logger.log(
+            logLevel,
+            filter.includePatterns.joinToString(prefix = "Includes:\n{\n\t", separator = "\n\t", postfix = "\n}")
         )
-    }
-
-    private fun logChanges(changes: List<FileChange>) {
-        logger.debug(
-            changes.joinToString(
-                prefix = "Changes:\n{\n\t", separator = "\n\t", postfix = "\n}"
-            ) { it.file.toString() })
     }
 
     companion object {
@@ -65,37 +64,41 @@ abstract class TestDiffTask : DefaultTask() {
             project: Project,
             variant: BaseVariant,
             changesFile: Provider<RegularFile>,
-            testsVariants: Iterable<BaseVariant>,
         ): TaskProvider<TestDiffTask> {
             val variantName = variant.name.capitalized()
             return project.tasks.register("testDiff${variantName}UnitTest", TestDiffTask::class.java) { task ->
                 val delegateName = "$UNIT_TEST_PREFIX$variantName$UNIT_TEST_SUFFIX"
                 val delegate = project.tasks.named(delegateName, Test::class.java).get()
-                task.delegate = delegate
-                task.changesFile = changesFile
-                task.testsSourceSets = project.collectSourceSets(testsVariants)
+                task.changesFile.set(changesFile)
+                // TODO: consider collecting testClassesDirs from variant.unitTestSourceSets
+                //  maybe we don't need to assemble tests to check any changes
+                task.testClassesDirs.set(project.provider { delegate.testClassesDirs.asFileTree })
+                task.filter.set(project.provider { delegate.filter })
                 task.dependsOn(
                     project.provider {
                         // TODO: potentially slow implementation(travers whole task graph),
                         //  benchmark and find alternatives if any
-                        //  looks like delegate depends only compileKolinTestUnitTest
+                        //  looks like delegate depends only compileKotlinTestUnitTest
                         //  main goal to get dependencies of delegate except our task
                         delegate.taskDependencies.getDependencies(delegate).apply { remove(task) }
                     }
                 )
                 delegate.dependsOn(task) // cancel running delegate if this task failed
+                delegate.onlyIf(OnlyIfHasFiltersSpec())
                 task.finalizedBy(delegate)
-            }
-        }
 
-        private fun Project.collectSourceSets(testVariants: Iterable<BaseVariant>): Provider<Set<File>> {
-            return provider {
-                testVariants.flatMap { variant ->
-                    variant.sourceSets.flatMap { source ->
-                        source.javaDirectories + source.kotlinDirectories
-                    }
-                }.toSet()
+                task.group = delegate.group
+                task.description = "Runs tests for changed files"
+                // TODO: consider creating separate testing task
+                // TODO: find out in which version this method was added(doesn't work for 7.3.3)
+//                task.notCompatibleWithConfigurationCache("Unsupported to write tasks that configure other tasks at execution time")
             }
         }
     }
+}
+
+class OnlyIfHasFiltersSpec : Spec<Task> {
+
+    override fun isSatisfiedBy(element: Task?): Boolean =
+        element !is Test || element.filter.includePatterns.isNotEmpty()
 }

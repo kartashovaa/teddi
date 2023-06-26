@@ -1,67 +1,80 @@
 package me.kyd3snik.test.diff.changes
 
 import org.gradle.api.Project
-import org.gradle.api.file.RegularFile
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
-import org.gradle.api.tasks.Exec
-import org.gradle.api.tasks.OutputFile
-import org.gradle.api.tasks.TaskProvider
-import org.gradle.work.DisableCachingByDefault
-import java.io.*
+import org.gradle.api.tasks.*
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.File
 
-@DisableCachingByDefault(because = "May work not as expected for HEAD based blobs")
+// TODO: add kind of filters here
+//  1) collect only changes related to current project
+//  2) collect only source file changes if tests are not using resources
+//  3) collect changes from sourceSets for current build variant
+@Suppress("UnstableApiUsage")
+@UntrackedTask(because = "Inputs are unstable so far")
 abstract class CollectChangesTask : Exec() {
 
-    private lateinit var fromBlob: Provider<String>
-    private lateinit var toBlob: Provider<String>
+    @get:Input
+    @get:Optional
+    abstract val fromBlob: Property<String?>
 
-    private lateinit var rootProjectDir: File
+    @get:Input
+    @get:Optional
+    abstract val toBlob: Property<String?>
 
     @get:OutputFile
-    lateinit var output: Provider<RegularFile>
-        private set
+    abstract val output: RegularFileProperty
+
+    private lateinit var projectDir: File
 
     override fun exec() {
-        val changesStream = ByteArrayOutputStream(128)
-        setupGitDiff(changesStream)
+        val buffer = ByteArrayOutputStream(128)
+        standardOutput = buffer
+        isIgnoreExitValue = false
+        val toBlob = toBlob.orNull?.takeIf(String::isNotBlank)
+        val fromBlob = fromBlob.orNull?.takeIf(String::isNotBlank)
+
+        commandLine(listOfNotNull("git", "diff", "--name-status", fromBlob, toBlob))
+
         super.exec()
 
-        executionResult.get()
-            .assertNormalExitValue()
-            .rethrowFailure()
-
-        val changes = parseGitDiff(changesStream)
-        dumpChanges(changes)
-    }
-
-    private fun setupGitDiff(changesStream: ByteArrayOutputStream) {
-        standardOutput = changesStream
-        commandLine("git", "diff", "--name-status", fromBlob.get(), toBlob.get())
-    }
-
-    private fun parseGitDiff(changesStream: ByteArrayOutputStream): List<FileChange> =
-        ByteArrayInputStream(changesStream.toByteArray())
-            .bufferedReader()
-            .lineSequence()
-            .let { GitDiffParser(rootProjectDir).parse(it) }
-
-    private fun dumpChanges(changes: List<FileChange>) {
-        ObjectOutputStream(FileOutputStream(output.get().asFile))
-            .use { it.writeObject(changes) }
+        val parser = GitDiffParser(workingDir, projectDir)
+        val storage = ChangesStore(output.asFile.get())
+        val bufferInputStream = ByteArrayInputStream(buffer.toByteArray())
+        storage.write(parser.parse(bufferInputStream))
     }
 
     companion object {
-        fun register(project: Project, output: Provider<RegularFile>): TaskProvider<CollectChangesTask> =
-            project.tasks.register("collectChanges", CollectChangesTask::class.java) { task ->
-                task.fromBlob = project.provider { requireNotNull(project.fromBlob) { "fromBlob isn't set" } }
-                task.toBlob = project.provider { project.toBlob ?: "HEAD" }
-                task.output = output
+
+        private const val TASK_NAME = "collectChanges"
+
+        fun get(project: Project): TaskProvider<CollectChangesTask> =
+            project.tasks.named(TASK_NAME, CollectChangesTask::class.java)
+
+        fun register(project: Project): TaskProvider<CollectChangesTask> =
+            project.tasks.register(TASK_NAME, CollectChangesTask::class.java) { task ->
+                task.fromBlob.set(project.fromBlob)
+                task.fromBlob.finalizeValue()
+                task.toBlob.set(project.toBlob)
+                task.toBlob.finalizeValue()
+                val output = project.layout.buildDirectory.file("test/changes.bin")
+                task.output.set(output)
+                task.output.finalizeValue()
+                task.outputs.upToDateWhen(ChangesUpToDateSpec().asTaskSpec())
                 task.workingDir = project.rootDir
-                task.rootProjectDir = project.rootDir
+                task.projectDir = project.projectDir
             }
 
-        private val Project.fromBlob: String? get() = properties["fromBlob"] as? String
-        private val Project.toBlob: String? get() = properties["toBlob"] as? String
+        private val Project.fromBlob: Provider<String>
+            get() = project.provider { properties["fromBlob"] as? String }
+        private val Project.toBlob: Provider<String?>
+            get() = project.provider {
+                val toBlob = properties["toBlob"] as? String
+                toBlob.takeIf { it != "HEAD" }
+            }
     }
 }
 
