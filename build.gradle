@@ -7,6 +7,13 @@ plugins {
 group = "me.kyd3snik"
 version = "0.0.1"
 
+def integrationSourceSet = sourceSets.create("integrationTest")
+tasks.register("testIntegrationTest", Test) {
+    testClassesDirs = integrationSourceSet.output
+    classpath = integrationSourceSet.runtimeClasspath
+    dependsOn(tasks.named("publishToMavenLocal"))
+}
+
 gradlePlugin {
     plugins {
         testDiff {
@@ -14,6 +21,8 @@ gradlePlugin {
             implementationClass = "me.kyd3snik.test.diff.TestDiffPlugin"
         }
     }
+
+    testSourceSet(integrationSourceSet)
 }
 
 repositories {
@@ -26,6 +35,8 @@ dependencies {
 
     testImplementation "junit:junit:4.13.2"
     testRuntimeOnly "org.junit.vintage:junit-vintage-engine:5.8.1"
+    integrationTestImplementation "junit:junit:4.13.2"
+    integrationTestRuntimeOnly "org.junit.vintage:junit-vintage-engine:5.8.1"
 }
 
 test {
