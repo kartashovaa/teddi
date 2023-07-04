@@ -41,7 +41,6 @@ class WordSplitter {
             // abbreviate
             wordLength() > 1 -> {
                 prev()
-                prev()
                 pushWord()
             }
 
