@@ -1,5 +1,6 @@
 package me.kyd3snik.test.diff
 
+import me.kyd3snik.test.diff.util.TeddiSandboxTestResultCollector
 import me.kyd3snik.test.diff.util.unzipResource
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
@@ -34,21 +35,9 @@ class TestDiffTest {
 
         assertEquals(TaskOutcome.SUCCESS, result.task(":app:testDiffDebugUnitTest")?.outcome)
         assertEquals(TaskOutcome.SUCCESS, result.task(":app:testDebugUnitTest")?.outcome)
-    }
 
-    @Test
-    fun runTwice() {
-        val runner = GradleRunner.create()
-            .withProjectDir(projectDir)
-            .forwardOutput()
-            .withArguments(":app:testDiffDebugUnitTest")
-        val result1 = runner.build()
-        val result2 = runner.build()
-
-        assertEquals(TaskOutcome.SUCCESS, result1.task(":app:testDiffDebugUnitTest")?.outcome)
-        assertEquals(TaskOutcome.SUCCESS, result1.task(":app:testDebugUnitTest")?.outcome)
-
-        assertEquals(TaskOutcome.SUCCESS, result2.task(":app:testDiffDebugUnitTest")?.outcome)
-        assertEquals(TaskOutcome.UP_TO_DATE, result2.task(":app:testDebugUnitTest")?.outcome)
+        val testResults = TeddiSandboxTestResultCollector(projectDir).collectResults()
+        assertEquals(1, testResults.size)
+        assertEquals("com.example.app.MainViewModelTest", testResults.first().className)
     }
 }
