@@ -6,6 +6,7 @@ import com.android.builder.core.ComponentType.Companion.UNIT_TEST_SUFFIX
 import me.kyd3snik.test.diff.changes.ChangesStore
 import me.kyd3snik.test.diff.test.resolver.ClosestClassTestResolver
 import me.kyd3snik.test.diff.test.resolver.FileSystemLayout
+import me.kyd3snik.test.diff.utils.TaskCompat
 import me.kyd3snik.test.diff.utils.capitalized
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
@@ -89,9 +90,10 @@ abstract class TestDiffTask : DefaultTask() {
 
                 task.group = delegate.group
                 task.description = "Runs tests for changed files"
-                // TODO: consider creating separate testing task
-                // TODO: find out in which version this method was added(doesn't work for 7.3.3)
-//                task.notCompatibleWithConfigurationCache("Unsupported to write tasks that configure other tasks at execution time")
+                TaskCompat.notCompatibleWithConfigurationCache(
+                    task,
+                    "Unsupported to write tasks that configure other tasks at execution time"
+                )
             }
         }
     }
