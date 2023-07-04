@@ -11,10 +11,12 @@ import me.kyd3snik.test.diff.utils.capitalized
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileTree
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.logging.LogLevel
+import org.gradle.api.logging.Logger
+import org.gradle.api.logging.Logging
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
@@ -25,6 +27,7 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.testing.TestFilter
+import org.gradle.internal.logging.slf4j.DefaultContextAwareTaskLogger
 import javax.inject.Inject
 
 abstract class TestDiffTask : DefaultTask() {
@@ -42,24 +45,37 @@ abstract class TestDiffTask : DefaultTask() {
     @get:Inject
     abstract val objectFactory: ObjectFactory
 
-    private val logLevel = LogLevel.ERROR
-
     @TaskAction
     fun testDiff() {
         val changesStore = ChangesStore(changesFile.get().asFile)
         val changes = objectFactory.fileCollection().from(changesStore.read())
-        logger.log(logLevel, changes.joinToString(prefix = "Changes:\n{\n\t", separator = "\n\t", postfix = "\n}"))
+        logChanges(changes)
         val testResolver = ClosestClassTestResolver(FileSystemLayout(), testClassesDirs.get())
         val filter = filter.get()
         testResolver.resolve(changes, filter)
+        logFilter(filter)
+    }
 
-        logger.log(
-            logLevel,
-            filter.includePatterns.joinToString(prefix = "Includes:\n{\n\t", separator = "\n\t", postfix = "\n}")
+    @Internal
+    override fun getLogger(): Logger = Companion.logger
+
+    private fun logFilter(filter: TestFilter) {
+        logger.info(
+            filter.includePatterns.joinToString(
+                prefix = "Includes:\n{\n\t",
+                separator = "\n\t",
+                postfix = "\n}"
+            )
         )
     }
 
+    private fun logChanges(changes: ConfigurableFileCollection) {
+        logger.info(changes.joinToString(prefix = "Changes:\n{\n\t", separator = "\n\t", postfix = "\n}"))
+    }
+
     companion object {
+
+        private val logger = DefaultContextAwareTaskLogger(Logging.getLogger(TestDiffTask::class.java))
 
         fun register(
             project: Project,
