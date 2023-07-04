@@ -75,15 +75,7 @@ abstract class TestDiffTask : DefaultTask() {
                 //  maybe we don't need to assemble tests to check any changes
                 task.testClassesDirs.set(project.provider { delegate.testClassesDirs.asFileTree })
                 task.filter.set(project.provider { delegate.filter })
-                task.dependsOn(
-                    project.provider {
-                        // TODO: potentially slow implementation(travers whole task graph),
-                        //  benchmark and find alternatives if any
-                        //  looks like delegate depends only compileKotlinTestUnitTest
-                        //  main goal to get dependencies of delegate except our task
-                        delegate.taskDependencies.getDependencies(delegate).apply { remove(task) }
-                    }
-                )
+                task.dependsOn(delegate.classpath)
                 delegate.dependsOn(task) // cancel running delegate if this task failed
                 delegate.onlyIf(OnlyIfHasFiltersSpec())
                 task.finalizedBy(delegate)
