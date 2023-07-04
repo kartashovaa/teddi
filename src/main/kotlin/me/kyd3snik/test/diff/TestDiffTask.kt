@@ -87,10 +87,8 @@ abstract class TestDiffTask : DefaultTask() {
                 val delegateName = "$UNIT_TEST_PREFIX$variantName$UNIT_TEST_SUFFIX"
                 val delegate = project.tasks.named(delegateName, Test::class.java).get()
                 task.changesFile.set(changesFile)
-                // TODO: consider collecting testClassesDirs from variant.unitTestSourceSets
-                //  maybe we don't need to assemble tests to check any changes
-                task.testClassesDirs.set(project.provider { delegate.testClassesDirs.asFileTree })
-                task.filter.set(project.provider { delegate.filter })
+                task.testClassesDirs.set(delegate.testClassesDirs.asFileTree)
+                task.filter.set(delegate.filter)
                 task.dependsOn(delegate.classpath)
                 delegate.dependsOn(task) // cancel running delegate if this task failed
                 delegate.onlyIf(OnlyIfHasFiltersSpec())
