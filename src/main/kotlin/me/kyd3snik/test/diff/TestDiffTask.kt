@@ -6,6 +6,8 @@ import com.android.builder.core.ComponentType.Companion.UNIT_TEST_SUFFIX
 import me.kyd3snik.test.diff.changes.ChangesStore
 import me.kyd3snik.test.diff.test.resolver.ClosestClassTestResolver
 import me.kyd3snik.test.diff.test.resolver.FileSystemLayout
+import me.kyd3snik.test.diff.test.resolver.FilterTestResolver
+import me.kyd3snik.test.diff.test.resolver.TestResolver
 import me.kyd3snik.test.diff.utils.TaskCompat
 import me.kyd3snik.test.diff.utils.capitalized
 import org.gradle.api.DefaultTask
@@ -50,11 +52,16 @@ abstract class TestDiffTask : DefaultTask() {
         val changesStore = ChangesStore(changesFile.get().asFile)
         val changes = objectFactory.fileCollection().from(changesStore.read())
         logChanges(changes)
-        val testResolver = ClosestClassTestResolver(FileSystemLayout(), testClassesDirs.get())
+        val testResolver = createTestResolver()
         val filter = filter.get()
         testResolver.resolve(changes, filter)
         logFilter(filter)
     }
+
+    private fun createTestResolver(): TestResolver = FilterTestResolver(
+        supportedExtensions = setOf("java", "kt"),
+        delegate = ClosestClassTestResolver(FileSystemLayout(), testClassesDirs.get())
+    )
 
     @Internal
     override fun getLogger(): Logger = Companion.logger
