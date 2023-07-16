@@ -19,7 +19,7 @@ jobs:
           ls ${{ github.workspace }}
       - run: echo "🍏 This job's status is ${{ job.status }}."
       - name: Build and test project
-        run: ./gradlew check
+        run: ./gradlew testIntegrationTest
       - name: Uploading test result
         if: ${{ always() }}
         uses: actions/upload-artifact@v3
