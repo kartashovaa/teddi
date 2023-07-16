@@ -21,6 +21,7 @@ jobs:
       - name: Build and test project
         run: ./gradlew check
       - name: Uploading test result
+        if: ${{ always() }}
         uses: actions/upload-artifact@v3
         with:
           name: test-result
