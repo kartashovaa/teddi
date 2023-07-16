@@ -20,3 +20,8 @@ jobs:
       - run: echo "🍏 This job's status is ${{ job.status }}."
       - name: Build and test project
         run: ./gradlew check
+      - name: Uploading test result
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-result
+          path: build/reports/tests
