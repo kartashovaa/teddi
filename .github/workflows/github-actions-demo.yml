@@ -1,6 +1,8 @@
 name: Github Actions Demo
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on: [ pull_request ]
+env:
+  ACTIONS_STEP_DEBUG: true
 jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
