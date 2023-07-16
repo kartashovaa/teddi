@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "me.kyd3snik"
-version = "0.0.1"
+version = "0.0.2"
 
 def integrationSourceSet = sourceSets.create("integrationTest")
 tasks.register("testIntegrationTest", Test) {
