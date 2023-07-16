@@ -18,4 +18,5 @@ jobs:
         run: |
           ls ${{ github.workspace }}
       - run: echo "🍏 This job's status is ${{ job.status }}."
-      - run: exit 1
+      - name: Build and test project
+        run: gradlew check
