@@ -4,10 +4,10 @@ import com.android.build.gradle.api.BaseVariant
 import com.android.builder.core.ComponentType.Companion.UNIT_TEST_PREFIX
 import com.android.builder.core.ComponentType.Companion.UNIT_TEST_SUFFIX
 import me.kyd3snik.test.diff.changes.ChangesStore
-import me.kyd3snik.test.diff.test.resolver.ClosestClassTestResolver
-import me.kyd3snik.test.diff.test.resolver.FileSystemLayout
 import me.kyd3snik.test.diff.test.resolver.FilterTestResolver
 import me.kyd3snik.test.diff.test.resolver.TestResolver
+import me.kyd3snik.test.diff.test.resolver.UsageTestResolver
+import me.kyd3snik.test.diff.test.resolver.usage.AsmUsageCollector
 import me.kyd3snik.test.diff.utils.TaskCompat
 import me.kyd3snik.test.diff.utils.capitalized
 import org.gradle.api.DefaultTask
@@ -60,7 +60,7 @@ abstract class TestDiffTask : DefaultTask() {
 
     private fun createTestResolver(): TestResolver = FilterTestResolver(
         supportedExtensions = setOf("java", "kt"),
-        delegate = ClosestClassTestResolver(FileSystemLayout(), testClassesDirs.get())
+        delegate = UsageTestResolver(AsmUsageCollector(), testClassesDirs.get())
     )
 
     @Internal
