@@ -10,18 +10,30 @@ import org.gradle.api.Project
 class TestDiffPlugin : Plugin<Project> {
 
     override fun apply(project: Project) {
-        val changesFile = CollectChangesTask.register(project).flatMap { it.output }
+        if (project === project.rootProject) {
+            val rootTask = project.task("testDiffUnitTest")
+            project.subprojects {
+                apply(it)
+                it.tasks.withType(TestDiffTask::class.java).all { rootTask.dependsOn(it) }
+            }
+        } else {
+            val changesFile = CollectChangesTask.register(project).flatMap { it.output }
+            project.pluginManager.withPlugin("com.android.application") {
+                // TODO: old extension, probably will become deprecated soon
+                project.extensions.findByType(AppExtension::class.java)
+                    ?.applicationVariants
+                    ?.all { variant ->
+                        TestDiffTask.register(project, variant, changesFile)
+                    }
 
-        project.pluginManager.withPlugin("com.android.application") {
-            // TODO: old extension, probably will become deprecated soon
-            project.extensions.findByType(AppExtension::class.java)
-                ?.applicationVariants
-                ?.all { variant -> TestDiffTask.register(project, variant, changesFile) }
-
-            project.extensions.findByType(LibraryExtension::class.java)
-                ?.libraryVariants
-                ?.all { variant -> TestDiffTask.register(project, variant, changesFile) }
+            }
+            project.pluginManager.withPlugin("com.android.library") {
+                project.extensions.findByType(LibraryExtension::class.java)
+                    ?.libraryVariants
+                    ?.all { variant ->
+                        TestDiffTask.register(project, variant, changesFile)
+                    }
+            }
         }
-
     }
 }

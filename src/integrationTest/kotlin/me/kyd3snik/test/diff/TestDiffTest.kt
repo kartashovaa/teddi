@@ -26,7 +26,7 @@ class TestDiffTest {
     }
 
     @Test
-    fun run() {
+    fun runApplication() {
         val result = GradleRunner.create()
             .withProjectDir(projectDir)
             .forwardOutput()
@@ -36,8 +36,46 @@ class TestDiffTest {
         assertEquals(TaskOutcome.SUCCESS, result.task(":app:testDiffDebugUnitTest")?.outcome)
         assertEquals(TaskOutcome.SUCCESS, result.task(":app:testDebugUnitTest")?.outcome)
 
-        val testResults = TeddiSandboxTestResultCollector(projectDir).collectResults()
+        val testResults = TeddiSandboxTestResultCollector(projectDir, "app").collectResults()
         assertEquals(1, testResults.size)
         assertEquals("com.example.app.MainViewModelTest", testResults.first().className)
+    }
+
+    @Test
+    fun runLibrary() {
+        val result = GradleRunner.create()
+            .withProjectDir(projectDir)
+            .forwardOutput()
+            .withArguments(":feature:testDiffDebugUnitTest", "-PagpVersion=7.3.0")
+            .build()
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":feature:testDiffDebugUnitTest")?.outcome)
+        assertEquals(TaskOutcome.SUCCESS, result.task(":feature:testDebugUnitTest")?.outcome)
+
+        val testResults = TeddiSandboxTestResultCollector(projectDir, "feature").collectResults()
+        assertEquals(1, testResults.size)
+        assertEquals("com.example.feature.FeatureViewModelTest", testResults.first().className)
+    }
+
+    @Test
+    fun runRoot() {
+        val result = GradleRunner.create()
+            .withProjectDir(projectDir)
+            .forwardOutput()
+            .withArguments(":testDiffUnitTest", "-PagpVersion=7.3.0")
+            .build()
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":app:testDiffDebugUnitTest")?.outcome)
+        assertEquals(TaskOutcome.SUCCESS, result.task(":app:testDebugUnitTest")?.outcome)
+        assertEquals(TaskOutcome.SUCCESS, result.task(":feature:testDiffDebugUnitTest")?.outcome)
+        assertEquals(TaskOutcome.SUCCESS, result.task(":feature:testDebugUnitTest")?.outcome)
+
+        val (appTestResult) = TeddiSandboxTestResultCollector(projectDir, "app").collectResults()
+            .also { assertEquals(1, it.size) }
+        val (featureTestResult) = TeddiSandboxTestResultCollector(projectDir, "feature").collectResults()
+            .also { assertEquals(1, it.size) }
+
+        assertEquals("com.example.app.MainViewModelTest", appTestResult.className)
+        assertEquals("com.example.feature.FeatureViewModelTest", featureTestResult.className)
     }
 }
