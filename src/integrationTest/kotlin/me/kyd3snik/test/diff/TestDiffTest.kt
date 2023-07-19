@@ -14,8 +14,11 @@ class TestDiffTest {
 
     private val projectDir = File("build/sandbox")
 
+    //TODO: check out forwarding ANDROID_HOME from -P optiion to test environment
+    //TODO: remove local.properties from TeddiSandbox.zip
     @Before
     fun setUp() {
+//        assert(System.getenv("ANDROID_HOME") != null)
         assert(projectDir.mkdirs())
         unzipResource("TeddiSandbox.zip", projectDir)
     }

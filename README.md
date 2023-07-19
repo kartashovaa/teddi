@@ -1,8 +1,11 @@
+[![Github Actions Demo](https://github.com/kartashov-a/teddi/actions/workflows/github-actions-demo.yml/badge.svg)](https://github.com/kartashov-a/teddi/actions/workflows/github-actions-demo.yml)
+
 ## Teddi
 
 Gradle plugin for testing diffs between commits
 
 Runs a test if:
+
 1) The test file itself is changed
 2) The file containing class under test is changed
 
