@@ -41,7 +41,7 @@ abstract class CollectChangesTask : Exec() {
 
         super.exec()
 
-        val parser = GitDiffParser(workingDir, projectDir)
+        val parser = GitDiffParser(workingDir)
         val storage = ChangesStore(output.asFile.get())
         val bufferInputStream = ByteArrayInputStream(buffer.toByteArray())
         storage.write(parser.parse(bufferInputStream))

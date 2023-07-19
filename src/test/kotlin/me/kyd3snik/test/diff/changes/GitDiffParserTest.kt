@@ -4,14 +4,15 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
+import java.io.InputStream
 
 class GitDiffParserTest {
 
-    private val parser = GitDiffParser(File("/"))
+    private val parser = GitDiffParser(File("/test/"))
 
     @Test
     fun parseEmpty() {
-        val changes = parser.parse(emptySequence())
+        val changes = parser.parse(InputStream.nullInputStream())
 
         assertTrue(changes.isEmpty())
     }
@@ -25,15 +26,14 @@ class GitDiffParserTest {
             R       dir/renamed.txt
             C       dir/copied.txt
             T       dir/changed.txt
-        """.trimIndent().lineSequence()
+        """.trimIndent()
 
         val expectedChanges = listOf(
-            FileChange.Created(File("/dir/added.txt")),
-            FileChange.Modified(File("/dir/modified.txt")),
-            FileChange.Deleted(File("/dir/deleted.txt")),
+            File("/test/dir/added.txt"),
+            File("/test/dir/modified.txt"),
         )
 
-        val actualChanges = parser.parse(diff)
+        val actualChanges = parser.parse(diff.encodeToByteArray().inputStream())
 
         assertEquals(expectedChanges, actualChanges)
     }
