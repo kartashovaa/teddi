@@ -6,6 +6,7 @@ import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.io.File
@@ -77,5 +78,34 @@ class TestDiffTest {
 
         assertEquals("com.example.app.MainViewModelTest", appTestResult.className)
         assertEquals("com.example.feature.FeatureViewModelTest", featureTestResult.className)
+    }
+
+    @Test
+    fun testLastCommit() {
+        val result = GradleRunner.create()
+            .withProjectDir(projectDir)
+            .forwardOutput()
+            .withEnvironment(System.getenv() + Pair("ANDROID_HOME", "/Users/kartashovaa1/Library/Android/sdk"))
+            .withArguments(":app:testDiffDebugUnitTest", "-PagpVersion=7.3.0", "--fromBlob=HEAD~1")
+            .build()
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":app:testDiffDebugUnitTest")?.outcome)
+        assertEquals(TaskOutcome.SUCCESS, result.task(":app:testDebugUnitTest")?.outcome)
+    }
+
+    @Test
+    fun testVerbose() {
+        val result = GradleRunner.create()
+            .withProjectDir(projectDir)
+            .forwardOutput()
+            .withEnvironment(System.getenv() + Pair("ANDROID_HOME", "/Users/kartashovaa1/Library/Android/sdk"))
+            .withArguments(":app:testDiffDebugUnitTest", "-PagpVersion=7.3.0", "--verbose")
+            .build()
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":app:testDiffDebugUnitTest")?.outcome)
+        assertEquals(TaskOutcome.SUCCESS, result.task(":app:testDebugUnitTest")?.outcome)
+
+        assertTrue(result.output.contains("[Teddi] Included tests"))
+        assertTrue(result.output.contains("[Teddi] Acquired changes"))
     }
 }
