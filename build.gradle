@@ -18,8 +18,8 @@ tasks.register("testIntegrationTest", Test) {
 gradlePlugin {
     plugins {
         testDiff {
-            id = "me.kyd3snik.teddi"
-            implementationClass = "me.kyd3snik.test.diff.TestDiffPlugin"
+            id = "io.github.kartashovaa.teddi"
+            implementationClass = "io.github.kartashovaa.teddi.TestDiffPlugin"
         }
     }
 
@@ -69,6 +69,8 @@ publishing {
     }
     publications {
         teddi(MavenPublication) {
+            group = "io.github.kartashovaa.teddi"
+            artifactId = "io.github.kartashovaa.teddi.gradle.plugin"
             from components.java
         }
     }
