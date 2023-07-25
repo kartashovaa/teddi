@@ -4,6 +4,8 @@ import com.android.build.gradle.api.BaseVariant
 import com.android.builder.core.ComponentType.Companion.UNIT_TEST_PREFIX
 import com.android.builder.core.ComponentType.Companion.UNIT_TEST_SUFFIX
 import me.kyd3snik.test.diff.changes.ChangesStore
+import me.kyd3snik.test.diff.options.DefaultDiffConstraintsOptionsFacade
+import me.kyd3snik.test.diff.options.DiffConstraintsOptionsFacade
 import me.kyd3snik.test.diff.test.resolver.FilterTestResolver
 import me.kyd3snik.test.diff.test.resolver.TestResolver
 import me.kyd3snik.test.diff.test.resolver.UsageTestResolver
@@ -17,6 +19,7 @@ import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileTree
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.logging.LogLevel
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.model.ObjectFactory
@@ -27,25 +30,27 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.testing.TestFilter
 import org.gradle.internal.logging.slf4j.DefaultContextAwareTaskLogger
 import javax.inject.Inject
 
-abstract class TestDiffTask : DefaultTask() {
+abstract class TestDiffTask : DefaultTask(), DiffConstraintsOptionsFacade {
 
     @get:InputFile
-//    @get:SkipWhenEmpty
     abstract val changesFile: RegularFileProperty
 
     @get:Internal
     abstract val testClassesDirs: Property<FileTree>
 
-    @get: Internal
+    @get:Internal
     abstract val filter: Property<TestFilter>
 
     @get:Inject
     abstract val objectFactory: ObjectFactory
+
+    private var logLevel = LogLevel.INFO
 
     @TaskAction
     fun testDiff() {
@@ -63,13 +68,19 @@ abstract class TestDiffTask : DefaultTask() {
         delegate = UsageTestResolver(AsmUsageCollector(), testClassesDirs.get())
     )
 
+    @Option(option = "verbose", description = "Prints acquired changes and included tests")
+    fun setVerbose(isVerbose: Boolean) {
+        logLevel = if (isVerbose) LogLevel.LIFECYCLE else LogLevel.INFO
+    }
+
     @Internal
     override fun getLogger(): Logger = Companion.logger
 
     private fun logFilter(filter: TestFilter) {
-        logger.info(
+        logger.log(
+            logLevel,
             filter.includePatterns.joinToString(
-                prefix = "Includes:\n{\n\t",
+                prefix = "[$TAG] Included tests:\n{\n\t",
                 separator = "\n\t",
                 postfix = "\n}"
             )
@@ -77,11 +88,19 @@ abstract class TestDiffTask : DefaultTask() {
     }
 
     private fun logChanges(changes: ConfigurableFileCollection) {
-        logger.info(changes.joinToString(prefix = "Changes:\n{\n\t", separator = "\n\t", postfix = "\n}"))
+        logger.log(
+            logLevel,
+            changes.joinToString(prefix = "[$TAG] Acquired changes:\n{\n\t", separator = "\n\t", postfix = "\n}")
+        )
     }
+
+    private val diffOptionsFacade by lazy { DefaultDiffConstraintsOptionsFacade(project) }
+    override fun setFromBlob(fromBlob: String) = diffOptionsFacade.setFromBlob(fromBlob)
+    override fun setToBlob(toBlob: String) = diffOptionsFacade.setToBlob(toBlob)
 
     companion object {
 
+        private const val TAG = "Teddi"
         private val logger = DefaultContextAwareTaskLogger(Logging.getLogger(TestDiffTask::class.java))
 
         fun register(

@@ -3,7 +3,6 @@ package me.kyd3snik.test.diff.changes
 import org.gradle.api.Project
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.*
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -56,24 +55,12 @@ abstract class CollectChangesTask : Exec() {
 
         fun register(project: Project): TaskProvider<CollectChangesTask> =
             project.tasks.register(TASK_NAME, CollectChangesTask::class.java) { task ->
-                task.fromBlob.set(project.fromBlob)
-                task.fromBlob.finalizeValue()
-                task.toBlob.set(project.toBlob)
-                task.toBlob.finalizeValue()
                 val output = project.layout.buildDirectory.file("test/changes.bin")
                 task.output.set(output)
                 task.output.finalizeValue()
                 task.outputs.upToDateWhen(ChangesUpToDateSpec().asTaskSpec())
                 task.workingDir = project.rootDir
                 task.projectDir = project.projectDir
-            }
-
-        private val Project.fromBlob: Provider<String>
-            get() = project.provider { properties["fromBlob"] as? String }
-        private val Project.toBlob: Provider<String?>
-            get() = project.provider {
-                val toBlob = properties["toBlob"] as? String
-                toBlob.takeIf { it != "HEAD" }
             }
     }
 }
