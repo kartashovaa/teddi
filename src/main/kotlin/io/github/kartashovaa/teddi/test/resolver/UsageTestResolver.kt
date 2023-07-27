@@ -24,6 +24,8 @@ private class TestVisitor(
 
     override fun visitClassFile(details: FileVisitDetails) {
         val usages = usageCollector.collect(details.file)
+            .map { usage -> usage.removeSuffix("Kt") }
+
         val isAnyUsageChanged = sourceFiles.asSequence()
             .map { file -> file.path.removeExtension() }
             .any { source -> usages.any { usage -> source.endsWith(usage) } }
