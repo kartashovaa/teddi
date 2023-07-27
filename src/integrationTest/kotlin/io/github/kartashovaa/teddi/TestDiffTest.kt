@@ -5,8 +5,7 @@ import io.github.kartashovaa.teddi.util.unzipResource
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import java.io.File
@@ -107,5 +106,17 @@ class TestDiffTest {
 
         assertTrue(result.output.contains("[Teddi] Included tests"))
         assertTrue(result.output.contains("[Teddi] Acquired changes"))
+    }
+
+    @Test
+    fun testDoesNotAffectedByPluginDirectly() {
+        val result = GradleRunner.create()
+            .withProjectDir(projectDir)
+            .forwardOutput()
+            .withArguments(":app:testDebugUnitTest", "-PagpVersion=7.3.0")
+            .buildAndFail() // there are failing tests
+
+        assertNull(result.task(":app:testDiffDebugUnitTest"))
+        assertEquals(TaskOutcome.FAILED, result.task(":app:testDebugUnitTest")?.outcome)
     }
 }

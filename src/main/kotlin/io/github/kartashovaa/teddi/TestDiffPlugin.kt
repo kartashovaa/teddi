@@ -11,10 +11,11 @@ class TestDiffPlugin : Plugin<Project> {
 
     override fun apply(project: Project) {
         if (project === project.rootProject) {
-            val rootTask = project.task("testDiffUnitTest")
-            project.subprojects {
-                apply(it)
-                it.tasks.withType(TestDiffTask::class.java).all { rootTask.dependsOn(it) }
+            project.subprojects(::apply)
+            project.tasks.register("testDiffUnitTest") { rootTask ->
+                project.subprojects { child ->
+                    child.tasks.withType(TestDiffTask::class.java).all { task -> rootTask.dependsOn(task) }
+                }
             }
         } else {
             val changesFile = CollectChangesTask.register(project).flatMap { it.output }
