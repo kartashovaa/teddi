@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "io.github.kartashovaa"
-version = "0.0.1"
+version = "0.0.1-SNAPSHOT"
 
 def integrationSourceSet = sourceSets.create("integrationTest")
 tasks.register("testIntegrationTest", Test) {
@@ -72,6 +72,33 @@ publishing {
             group = "io.github.kartashovaa.teddi"
             artifactId = "io.github.kartashovaa.teddi.gradle.plugin"
             from components.java
+
+            pom {
+                name = "Teddi"
+                description = "Gradle plugin for testing diff between commits"
+                url = "https://github.com/kartashovaa/teddi"
+
+                licenses {
+                    license {
+                        name = "The Apache License, Version 2.0"
+                        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = "kartashovaa"
+                        name = "Andrey Kartashov"
+                        email = "kartashovandrey73@gmail.com"
+                    }
+                }
+
+                scm {
+                    connection = "scm:git:git://github.com/kartashovaa/teddi.git"
+                    developerConnection = "scm:git:ssh://github.com:kartashovaa/teddi.git"
+                    url = "https://github.com/kartashovaa/teddi"
+                }
+            }
         }
     }
 }
