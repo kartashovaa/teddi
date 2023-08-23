@@ -4,8 +4,11 @@ import com.android.build.gradle.api.BaseVariant
 import com.android.builder.core.ComponentType.Companion.UNIT_TEST_PREFIX
 import com.android.builder.core.ComponentType.Companion.UNIT_TEST_SUFFIX
 import io.github.kartashovaa.teddi.changes.ChangesStore
-import io.github.kartashovaa.teddi.options.DefaultDiffConstraintsOptionsFacade
-import io.github.kartashovaa.teddi.options.DiffConstraintsOptionsFacade
+import io.github.kartashovaa.teddi.options.DiffConstraintsOptionsHandler
+import io.github.kartashovaa.teddi.options.DiffConstraintsOptionsHandler.Companion.FROM_BLOB_OPTION
+import io.github.kartashovaa.teddi.options.DiffConstraintsOptionsHandler.Companion.FROM_BLOB_OPTION_DESCRIPTION
+import io.github.kartashovaa.teddi.options.DiffConstraintsOptionsHandler.Companion.TO_BLOB_OPTION
+import io.github.kartashovaa.teddi.options.DiffConstraintsOptionsHandler.Companion.TO_BLOB_OPTION_DESCRIPTION
 import io.github.kartashovaa.teddi.test.resolver.FilterTestResolver
 import io.github.kartashovaa.teddi.test.resolver.TestResolver
 import io.github.kartashovaa.teddi.test.resolver.UsageTestResolver
@@ -36,7 +39,7 @@ import org.gradle.api.tasks.testing.TestFilter
 import org.gradle.internal.logging.slf4j.DefaultContextAwareTaskLogger
 import javax.inject.Inject
 
-abstract class TestDiffTask : DefaultTask(), DiffConstraintsOptionsFacade {
+abstract class TestDiffTask : DefaultTask() {
 
     @get:InputFile
     abstract val changesFile: RegularFileProperty
@@ -51,6 +54,8 @@ abstract class TestDiffTask : DefaultTask(), DiffConstraintsOptionsFacade {
     abstract val objectFactory: ObjectFactory
 
     private var logLevel = LogLevel.INFO
+
+    private val diffOptionsHandler by lazy { DiffConstraintsOptionsHandler(project) }
 
     @TaskAction
     fun testDiff() {
@@ -94,9 +99,11 @@ abstract class TestDiffTask : DefaultTask(), DiffConstraintsOptionsFacade {
         )
     }
 
-    private val diffOptionsFacade by lazy { DefaultDiffConstraintsOptionsFacade(project) }
-    override fun setFromBlob(fromBlob: String) = diffOptionsFacade.setFromBlob(fromBlob)
-    override fun setToBlob(toBlob: String) = diffOptionsFacade.setToBlob(toBlob)
+    @Option(option = FROM_BLOB_OPTION, description = FROM_BLOB_OPTION_DESCRIPTION)
+    fun setFromBlob(fromBlob: String) = diffOptionsHandler.setFromBlob(fromBlob)
+
+    @Option(option = TO_BLOB_OPTION, description = TO_BLOB_OPTION_DESCRIPTION)
+    fun setToBlob(toBlob: String) = diffOptionsHandler.setToBlob(toBlob)
 
     companion object {
 
