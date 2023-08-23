@@ -1,23 +1,23 @@
 package io.github.kartashovaa.teddi
 
-import io.github.kartashovaa.teddi.util.TeddiSandboxTestResultCollector
-import io.github.kartashovaa.teddi.util.unzipResource
+import io.github.kartashovaa.teddi.util.*
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import java.io.File
 
 class TestDiffTest {
 
     private val projectDir = File("build/sandbox")
+    private val project: TeddiProjectWriter = DefaultProjectWriter(projectDir)
 
     @Before
     fun setUp() {
         assert(projectDir.mkdirs())
-        unzipResource("TeddiSandbox.zip", projectDir)
     }
 
     @After
@@ -27,42 +27,106 @@ class TestDiffTest {
 
     @Test
     fun runApplication() {
+        project.createMinimalRootProject()
+        val app = project.createAndroidApplicationModule(name = "app")
+        app.kotlin("com.example.app.OtherViewModel", OTHER_VIEW_MODEL_CONTENT)
+        val viewModelSource = app.kotlin("com.example.app.MainViewModel", DEFAULT_VIEW_MODEL_CONTENT)
+        app.kotlin("com.example.app.MainViewModelTest", DEFAULT_VIEWMODEL_TEST_CONTENT, "test")
+        app.kotlin("com.example.app.OtherViewModelTest", DEFAULT_OTHER_VIEWMODEL_TEST_CONTENT, "test")
+
+        project.commit("Initial commit")
+        viewModelSource.appendText("\n\n")
+
         val result = GradleRunner.create()
             .withProjectDir(projectDir)
             .forwardOutput()
-            .withArguments(":app:testDiffDebugUnitTest", "-PagpVersion=7.3.0")
+            .withArguments(":app:testDiffDebugUnitTest")
             .build()
 
         assertEquals(TaskOutcome.SUCCESS, result.task(":app:testDiffDebugUnitTest")?.outcome)
         assertEquals(TaskOutcome.SUCCESS, result.task(":app:testDebugUnitTest")?.outcome)
 
-        val testResults = TeddiSandboxTestResultCollector(projectDir, "app").collectResults()
-        assertEquals(1, testResults.size)
-        assertEquals("com.example.app.MainViewModelTest", testResults.first().className)
+        TeddiSandboxTestResultCollector(projectDir, "app").test()
+            .assertCount(1)
+            .assertSuccess("com.example.app.MainViewModelTest")
     }
 
     @Test
+    @Ignore("Fix MainViewModel in FeatureViewModel.kt")
     fun runLibrary() {
+        project.createMinimalRootProject()
+        val feature = project.createAndroidLibraryModule(name = "feature")
+        feature.kotlin("com.example.feature.OtherViewModel", OTHER_VIEW_MODEL_CONTENT)
+        val viewModelSource = feature.kotlin("com.example.feature.FeatureViewModel", DEFAULT_VIEW_MODEL_CONTENT)
+        feature.kotlin("com.example.feature.FeatureViewModelTest", DEFAULT_VIEWMODEL_TEST_CONTENT, "test")
+        feature.kotlin("com.example.feature.OtherViewModelTest", DEFAULT_OTHER_VIEWMODEL_TEST_CONTENT, "test")
+
+        project.commit("Initial commit")
+        viewModelSource.appendText("\n\n")
+
         val result = GradleRunner.create()
             .withProjectDir(projectDir)
             .forwardOutput()
-            .withArguments(":feature:testDiffDebugUnitTest", "-PagpVersion=7.3.0")
+            .withArguments(":feature:testDiffDebugUnitTest")
             .build()
 
         assertEquals(TaskOutcome.SUCCESS, result.task(":feature:testDiffDebugUnitTest")?.outcome)
         assertEquals(TaskOutcome.SUCCESS, result.task(":feature:testDebugUnitTest")?.outcome)
 
-        val testResults = TeddiSandboxTestResultCollector(projectDir, "feature").collectResults()
-        assertEquals(1, testResults.size)
-        assertEquals("com.example.feature.FeatureViewModelTest", testResults.first().className)
+        TeddiSandboxTestResultCollector(projectDir, "feature").test()
+            .assertCount(1)
+            .assertSuccess("com.example.feature.FeatureViewModelTest")
+    }
+
+    @Test
+    fun runLibraryNormal() {
+        project.createMinimalRootProject()
+        val feature = project.createAndroidLibraryModule(name = "feature")
+        feature.kotlin("com.example.feature.OtherViewModel", OTHER_VIEW_MODEL_CONTENT)
+        val viewModelSource = feature.kotlin("com.example.feature.MainViewModel", DEFAULT_VIEW_MODEL_CONTENT)
+        feature.kotlin("com.example.feature.MainViewModelTest", DEFAULT_VIEWMODEL_TEST_CONTENT, "test")
+        feature.kotlin("com.example.feature.OtherViewModelTest", DEFAULT_OTHER_VIEWMODEL_TEST_CONTENT, "test")
+
+        project.commit("Initial commit")
+        viewModelSource.appendText("\n\n")
+
+        val result = GradleRunner.create()
+            .withProjectDir(projectDir)
+            .forwardOutput()
+            .withArguments(":feature:testDiffDebugUnitTest")
+            .build()
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":feature:testDiffDebugUnitTest")?.outcome)
+        assertEquals(TaskOutcome.SUCCESS, result.task(":feature:testDebugUnitTest")?.outcome)
+
+        TeddiSandboxTestResultCollector(projectDir, "feature").test()
+            .assertCount(1)
+            .assertSuccess("com.example.feature.MainViewModelTest")
     }
 
     @Test
     fun runRoot() {
+        project.createMinimalRootProject()
+        val app = project.createAndroidApplicationModule(name = "app", dependencies = listOf("feature"))
+        app.kotlin("com.example.app.OtherMainViewModel", OTHER_VIEW_MODEL_CONTENT)
+        val appViewModelSource = app.kotlin("com.example.app.MainViewModel", DEFAULT_VIEW_MODEL_CONTENT)
+        app.kotlin("com.example.app.MainViewModelTest", DEFAULT_VIEWMODEL_TEST_CONTENT, "test")
+        app.kotlin("com.example.app.OtherViewModelTest", DEFAULT_OTHER_VIEWMODEL_TEST_CONTENT, "test")
+
+        val feature = project.createAndroidLibraryModule(name = "feature")
+        feature.kotlin("com.example.feature.OtherViewModel", OTHER_VIEW_MODEL_CONTENT)
+        val featureViewModelSource = feature.kotlin("com.example.feature.MainViewModel", DEFAULT_VIEW_MODEL_CONTENT)
+        feature.kotlin("com.example.feature.MainViewModelTest", DEFAULT_VIEWMODEL_TEST_CONTENT, "test")
+        feature.kotlin("com.example.feature.OtherViewModelTest", DEFAULT_OTHER_VIEWMODEL_TEST_CONTENT, "test")
+
+        project.commit("Initial commit")
+        appViewModelSource.appendText("\n\n")
+        featureViewModelSource.appendText("\n\n")
+
         val result = GradleRunner.create()
             .withProjectDir(projectDir)
             .forwardOutput()
-            .withArguments(":testDiffUnitTest", "-PagpVersion=7.3.0")
+            .withArguments(":testDiffUnitTest")
             .build()
 
         assertEquals(TaskOutcome.SUCCESS, result.task(":app:testDiffDebugUnitTest")?.outcome)
@@ -70,22 +134,31 @@ class TestDiffTest {
         assertEquals(TaskOutcome.SUCCESS, result.task(":feature:testDiffDebugUnitTest")?.outcome)
         assertEquals(TaskOutcome.SUCCESS, result.task(":feature:testDebugUnitTest")?.outcome)
 
-        val (appTestResult) = TeddiSandboxTestResultCollector(projectDir, "app").collectResults()
-            .also { assertEquals(1, it.size) }
-        val (featureTestResult) = TeddiSandboxTestResultCollector(projectDir, "feature").collectResults()
-            .also { assertEquals(1, it.size) }
+        TeddiSandboxTestResultCollector(projectDir, "app").test()
+            .assertCount(1)
+            .assertSuccess("com.example.app.MainViewModelTest")
 
-        assertEquals("com.example.app.MainViewModelTest", appTestResult.className)
-        assertEquals("com.example.feature.FeatureViewModelTest", featureTestResult.className)
+        TeddiSandboxTestResultCollector(projectDir, "feature").test()
+            .assertCount(1)
+            .assertSuccess("com.example.feature.MainViewModelTest")
     }
 
     @Test
     fun testLastCommit() {
+        project.createMinimalRootProject()
+        val app = project.createAndroidApplicationModule(name = "app")
+        val viewModelSource = app.kotlin("com.example.app.MainViewModel", DEFAULT_VIEW_MODEL_CONTENT)
+        app.kotlin("com.example.app.MainViewModelTest", DEFAULT_VIEWMODEL_TEST_CONTENT, "test")
+
+        project.commit("Initial commit")
+        viewModelSource.appendText("\n\n")
+        project.commit("Second commit")
+
+
         val result = GradleRunner.create()
             .withProjectDir(projectDir)
             .forwardOutput()
-            .withEnvironment(System.getenv() + Pair("ANDROID_HOME", "/Users/kartashovaa1/Library/Android/sdk"))
-            .withArguments(":app:testDiffDebugUnitTest", "-PagpVersion=7.3.0", "--fromBlob=HEAD~1")
+            .withArguments(":app:testDiffDebugUnitTest", "--fromBlob=HEAD~1")
             .build()
 
         assertEquals(TaskOutcome.SUCCESS, result.task(":app:testDiffDebugUnitTest")?.outcome)
@@ -94,11 +167,18 @@ class TestDiffTest {
 
     @Test
     fun testVerbose() {
+        project.createMinimalRootProject()
+        val app = project.createAndroidApplicationModule(name = "app")
+        val viewModelSource = app.kotlin("com.example.app.MainViewModel", DEFAULT_VIEW_MODEL_CONTENT)
+        app.kotlin("com.example.app.MainViewModelTest", DEFAULT_VIEWMODEL_TEST_CONTENT, "test")
+
+        project.commit("Initial commit")
+        viewModelSource.appendText("\n\n")
+
         val result = GradleRunner.create()
             .withProjectDir(projectDir)
             .forwardOutput()
-            .withEnvironment(System.getenv() + Pair("ANDROID_HOME", "/Users/kartashovaa1/Library/Android/sdk"))
-            .withArguments(":app:testDiffDebugUnitTest", "-PagpVersion=7.3.0", "--verbose")
+            .withArguments(":app:testDiffDebugUnitTest", "--verbose")
             .build()
 
         assertEquals(TaskOutcome.SUCCESS, result.task(":app:testDiffDebugUnitTest")?.outcome)
@@ -110,13 +190,20 @@ class TestDiffTest {
 
     @Test
     fun testDoesNotAffectedByPluginDirectly() {
+        project.createMinimalRootProject()
+        val app = project.createAndroidApplicationModule(name = "app")
+        app.kotlin("com.example.app.MainViewModel", DEFAULT_VIEW_MODEL_CONTENT)
+        app.kotlin("com.example.app.MainViewModelTest", DEFAULT_VIEWMODEL_TEST_CONTENT, "test")
+
+        project.commit("Initial commit")
+
         val result = GradleRunner.create()
             .withProjectDir(projectDir)
             .forwardOutput()
-            .withArguments(":app:testDebugUnitTest", "-PagpVersion=7.3.0")
-            .buildAndFail() // there are failing tests
+            .withArguments(":app:testDebugUnitTest")
+            .build()
 
         assertNull(result.task(":app:testDiffDebugUnitTest"))
-        assertEquals(TaskOutcome.FAILED, result.task(":app:testDebugUnitTest")?.outcome)
+        assertEquals(TaskOutcome.SUCCESS, result.task(":app:testDebugUnitTest")?.outcome)
     }
 }
