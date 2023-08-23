@@ -144,6 +144,42 @@ class TestDiffTest {
     }
 
     @Test
+    fun runKotlinModule() {
+        project.createMinimalRootProject()
+        val app = project.createKotlinModule(name = "lib")
+        val appViewModelSource = app.kotlin("com.example.lib.MainViewModel", "class MainViewModel")
+        app.kotlin(
+            "com.example.lib.MainViewModelTest", """
+            import org.junit.Test
+
+            class MainViewModelTest {
+
+                @Test
+                fun test() {
+                    val viewModel = MainViewModel()
+                }
+            }
+        """.trimIndent(), "test"
+        )
+
+        project.commit("Initial commit")
+        appViewModelSource.appendText("\n\n")
+
+        val result = GradleRunner.create()
+            .withProjectDir(projectDir)
+            .forwardOutput()
+            .withArguments(":lib:testDiff")
+            .build()
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":lib:testDiff")?.outcome)
+        assertEquals(TaskOutcome.SUCCESS, result.task(":lib:test")?.outcome)
+
+        TeddiSandboxTestResultCollector(projectDir, "lib", "test").test()
+            .assertCount(1)
+            .assertSuccess("com.example.lib.MainViewModelTest")
+    }
+
+    @Test
     fun testLastCommit() {
         project.createMinimalRootProject()
         val app = project.createAndroidApplicationModule(name = "app")

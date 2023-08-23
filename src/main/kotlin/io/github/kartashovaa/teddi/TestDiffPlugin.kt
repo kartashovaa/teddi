@@ -5,6 +5,7 @@ import com.android.build.gradle.LibraryExtension
 import io.github.kartashovaa.teddi.changes.CollectChangesTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.plugins.JavaPluginExtension
 
 @Suppress("UNUSED") // used in plugin definition
 class TestDiffPlugin : Plugin<Project> {
@@ -34,6 +35,11 @@ class TestDiffPlugin : Plugin<Project> {
                     ?.all { variant ->
                         TestDiffTask.register(project, variant, changesFile)
                     }
+            }
+            project.pluginManager.withPlugin("java") {
+                project.extensions.findByType(JavaPluginExtension::class.java)?.let { ext ->
+                    TestDiffTask.register(project, changesFile)
+                }
             }
         }
     }
