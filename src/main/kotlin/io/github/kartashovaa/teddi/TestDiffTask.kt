@@ -119,21 +119,33 @@ abstract class TestDiffTask : DefaultTask() {
             return project.tasks.register("testDiff${variantName}UnitTest", TestDiffTask::class.java) { task ->
                 val delegateName = "$UNIT_TEST_PREFIX$variantName$UNIT_TEST_SUFFIX"
                 val delegate = project.tasks.named(delegateName, Test::class.java).get()
-                task.changesFile.set(changesFile)
-                task.testClassesDirs.set(delegate.testClassesDirs.asFileTree)
-                task.filter.set(delegate.filter)
-                task.dependsOn(delegate.classpath)
-                delegate.dependsOn(task) // cancel running delegate if this task failed
-                delegate.onlyIf(OnlyIfHasFiltersSpec())
-                task.finalizedBy(delegate)
-
-                task.group = delegate.group
-                task.description = "Runs tests for changed files"
-                TaskCompat.notCompatibleWithConfigurationCache(
-                    task,
-                    "Unsupported to write tasks that configure other tasks at execution time"
-                )
+                task.init(changesFile, delegate)
             }
+        }
+
+        fun register(
+            project: Project,
+            changesFile: Provider<RegularFile>,
+        ): TaskProvider<TestDiffTask> = project.tasks.register("testDiff", TestDiffTask::class.java) { task ->
+            val delegate = project.tasks.named("test", Test::class.java).get()
+            task.init(changesFile, delegate)
+        }
+
+        private fun TestDiffTask.init(changesFileProvider: Provider<RegularFile>, delegate: Test) {
+            changesFile.set(changesFileProvider)
+            testClassesDirs.set(delegate.testClassesDirs.asFileTree)
+            filter.set(delegate.filter)
+            dependsOn(delegate.classpath)
+            delegate.dependsOn(this) // cancel running delegate if this task failed
+            delegate.onlyIf(OnlyIfHasFiltersSpec())
+            finalizedBy(delegate)
+
+            group = delegate.group
+            description = "Runs tests for changed files"
+            TaskCompat.notCompatibleWithConfigurationCache(
+                this,
+                "Unsupported to write tasks that configure other tasks at execution time"
+            )
         }
     }
 }
