@@ -12,6 +12,7 @@ class TestDiffPlugin : Plugin<Project> {
 
     override fun apply(project: Project) {
         if (project === project.rootProject) {
+            TestDiffExtension.register(project)
             project.subprojects(::apply)
             project.tasks.register("testDiffUnitTest") { rootTask ->
                 project.subprojects { child ->
@@ -21,17 +22,21 @@ class TestDiffPlugin : Plugin<Project> {
         } else {
             val changesFile = CollectChangesTask.register(project).flatMap { it.output }
             project.pluginManager.withPlugin("com.android.application") {
+                val ext = TestDiffExtension.get(project.rootProject)
                 // TODO: old extension, probably will become deprecated soon
                 project.extensions.findByType(AppExtension::class.java)
                     ?.applicationVariants
+                    ?.matching { variant -> variant.name !in ext.ignoredVariants.get() }
                     ?.all { variant ->
                         TestDiffTask.register(project, variant, changesFile)
                     }
 
             }
             project.pluginManager.withPlugin("com.android.library") {
+                val ext = TestDiffExtension.get(project.rootProject)
                 project.extensions.findByType(LibraryExtension::class.java)
                     ?.libraryVariants
+                    ?.matching { variant -> variant.name !in ext.ignoredVariants.get() }
                     ?.all { variant ->
                         TestDiffTask.register(project, variant, changesFile)
                     }

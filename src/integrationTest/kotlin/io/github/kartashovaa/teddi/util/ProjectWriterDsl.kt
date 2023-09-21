@@ -1,12 +1,15 @@
 package io.github.kartashovaa.teddi.util
 
-import io.github.kartashovaa.teddi.util.*
 import org.intellij.lang.annotations.Language
 import java.io.File
 
-fun GradleProjectWriter.createMinimalRootProject(agpVersion: String = "7.3.0") {
+fun GradleProjectWriter.createMinimalRootProject(
+    agpVersion: String = "7.3.0",
+    teddiVersion: String = "latest.integration",
+    extraConfiguration: String = ""
+) {
     settingsScript(DEFAULT_SETTINGS_SCRIPT)
-    buildScript(ANDROID_ROOT_BUILD_SCRIPT)
+    buildScript(createAndroidRootBuildScript(agpVersion, teddiVersion, extraConfiguration))
     properties("android.useAndroidX=true")
 }
 
@@ -39,14 +42,16 @@ fun TeddiProjectWriter.createKotlinModule(
     name: String = "feature",
 ): TeddiProjectWriter {
     return createMinimalSubProject(name).apply {
-        buildScript("""
+        buildScript(
+            """
             plugins {
                 id 'kotlin'
             }
             dependencies {
                 testImplementation 'junit:junit:4.13.2'
             }
-        """.trimIndent())
+        """.trimIndent()
+        )
     }
 }
 
@@ -70,14 +75,15 @@ private val DEFAULT_SETTINGS_SCRIPT = """
 """.trimIndent()
 
 @Language("groovy")
-private val ANDROID_ROOT_BUILD_SCRIPT = """
+private fun createAndroidRootBuildScript(agpVersion: String, teddiVersion: String, extraConfiguration: String) = """
     plugins {
-        id 'com.android.application' version "7.3.0" apply false
-        id 'com.android.library' version "7.3.0" apply false
+        id 'com.android.application' version "$agpVersion" apply false
+        id 'com.android.library' version "$agpVersion" apply false
         id 'org.jetbrains.kotlin.android' version '1.8.0' apply false
-        id 'io.github.kartashovaa.teddi' version 'latest.integration'
+        id 'io.github.kartashovaa.teddi' version '$teddiVersion'
     }
 
+$extraConfiguration
 """.trimIndent()
 
 @Language("groovy")
@@ -125,6 +131,7 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }
 """.trimIndent()
+
 @Language("groovy")
 private fun createLibraryBuildScript(dependencies: List<String>) = """
 plugins {
@@ -188,6 +195,7 @@ val DEFAULT_VIEW_MODEL_CONTENT = """
                 }
             }
         """.trimIndent()
+
 @Language("kt")
 val OTHER_VIEW_MODEL_CONTENT = """
             import androidx.lifecycle.ViewModel
@@ -217,6 +225,7 @@ val DEFAULT_VIEWMODEL_TEST_CONTENT = """
         }
     }
 """.trimIndent()
+
 @Language("kt")
 val DEFAULT_OTHER_VIEWMODEL_TEST_CONTENT = """
     import org.junit.Assert.assertTrue
@@ -233,4 +242,12 @@ val DEFAULT_OTHER_VIEWMODEL_TEST_CONTENT = """
             assertTrue(true)
         }
     }
+""".trimIndent()
+
+@Language("groovy")
+val IGNORE_DEBUG_VARIANT_CONFIGURATION = """
+    teddi{
+        ignoredVariants = ["debug"]
+    }
+    
 """.trimIndent()

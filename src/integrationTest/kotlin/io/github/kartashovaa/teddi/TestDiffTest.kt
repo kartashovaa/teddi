@@ -52,6 +52,30 @@ class TestDiffTest {
     }
 
     @Test
+    fun runApplicationWithIgnores() {
+        project.createMinimalRootProject(extraConfiguration = IGNORE_DEBUG_VARIANT_CONFIGURATION)
+        project.createAndroidApplicationModule(name = "app")
+        val result = GradleRunner.create()
+            .withProjectDir(projectDir)
+            .forwardOutput()
+            .withArguments(":app:testDiffDebugUnitTest")
+            .buildAndFail()
+        assertTrue("Task 'testDiffDebugUnitTest' not found in project ':app'." in result.output)
+    }
+
+    @Test
+    fun runLibraryWithIgnores() {
+        project.createMinimalRootProject(extraConfiguration = IGNORE_DEBUG_VARIANT_CONFIGURATION)
+        project.createAndroidLibraryModule(name = "feature")
+        val result = GradleRunner.create()
+            .withProjectDir(projectDir)
+            .forwardOutput()
+            .withArguments(":feature:testDiffDebugUnitTest")
+            .buildAndFail()
+        assertTrue("Task 'testDiffDebugUnitTest' not found in project ':feature'." in result.output)
+    }
+
+    @Test
     @Ignore("Fix MainViewModel in FeatureViewModel.kt")
     fun runLibrary() {
         project.createMinimalRootProject()
