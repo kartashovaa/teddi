@@ -14,11 +14,7 @@ class TestDiffPlugin : Plugin<Project> {
         if (project === project.rootProject) {
             TestDiffExtension.register(project)
             project.subprojects(::apply)
-            project.tasks.register("testDiffUnitTest") { rootTask ->
-                project.subprojects { child ->
-                    child.tasks.withType(TestDiffTask::class.java).all { task -> rootTask.dependsOn(task) }
-                }
-            }
+            TestDiffRootTask.register(project)
         } else {
             val changesFile = CollectChangesTask.register(project).flatMap { it.output }
             project.pluginManager.withPlugin("com.android.application") {

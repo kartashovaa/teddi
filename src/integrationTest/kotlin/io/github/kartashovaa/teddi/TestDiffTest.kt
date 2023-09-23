@@ -143,14 +143,15 @@ class TestDiffTest {
         feature.kotlin("com.example.feature.MainViewModelTest", DEFAULT_VIEWMODEL_TEST_CONTENT, "test")
         feature.kotlin("com.example.feature.OtherViewModelTest", DEFAULT_OTHER_VIEWMODEL_TEST_CONTENT, "test")
 
-        project.commit("Initial commit")
+        val initialCommit = project.commit("Initial commit")
         appViewModelSource.appendText("\n\n")
         featureViewModelSource.appendText("\n\n")
+        project.commit("Second commit")
 
         val result = GradleRunner.create()
             .withProjectDir(projectDir)
             .forwardOutput()
-            .withArguments(":testDiffUnitTest")
+            .withArguments(":testDiffUnitTest", "--fromBlob=$initialCommit")
             .build()
 
         assertEquals(TaskOutcome.SUCCESS, result.task(":app:testDiffDebugUnitTest")?.outcome)
