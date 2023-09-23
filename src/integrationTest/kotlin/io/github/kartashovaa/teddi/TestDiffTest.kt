@@ -52,9 +52,21 @@ class TestDiffTest {
     }
 
     @Test
-    fun runApplicationWithIgnores() {
+    fun runApplicationWithRootIgnores() {
         project.createMinimalRootProject(extraConfiguration = IGNORE_DEBUG_VARIANT_CONFIGURATION)
         project.createAndroidApplicationModule(name = "app")
+        val result = GradleRunner.create()
+            .withProjectDir(projectDir)
+            .forwardOutput()
+            .withArguments(":app:testDiffDebugUnitTest")
+            .buildAndFail()
+        assertTrue("Task 'testDiffDebugUnitTest' not found in project ':app'." in result.output)
+    }
+
+    @Test
+    fun runApplicationWithLocalIgnores() {
+        project.createMinimalRootProject()
+        project.createAndroidApplicationModule(name = "app", extraConfiguration = IGNORE_DEBUG_VARIANT_CONFIGURATION)
         val result = GradleRunner.create()
             .withProjectDir(projectDir)
             .forwardOutput()

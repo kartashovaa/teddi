@@ -20,10 +20,11 @@ fun TeddiProjectWriter.createMinimalSubProject(name: String): TeddiProjectWriter
 
 fun TeddiProjectWriter.createAndroidApplicationModule(
     name: String = "app",
-    dependencies: List<String> = emptyList()
+    dependencies: List<String> = emptyList(),
+    extraConfiguration: String = ""
 ): TeddiProjectWriter {
     return createMinimalSubProject(name).apply {
-        buildScript(createApplicationBuildScript(dependencies))
+        buildScript(createApplicationBuildScript(dependencies, extraConfiguration))
         manifest(DEFAULT_MANIFEST)
     }
 }
@@ -87,7 +88,7 @@ $extraConfiguration
 """.trimIndent()
 
 @Language("groovy")
-private fun createApplicationBuildScript(dependencies: List<String>) = """
+private fun createApplicationBuildScript(dependencies: List<String>, extraConfiguration: String) = """
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
@@ -120,6 +121,8 @@ android {
         jvmTarget = '1.8'
     }
 }
+
+$extraConfiguration
 
 dependencies {
     implementation 'androidx.core:core-ktx:1.8.0'
@@ -249,5 +252,4 @@ val IGNORE_DEBUG_VARIANT_CONFIGURATION = """
     teddi{
         ignoredVariants = ["debug"]
     }
-    
 """.trimIndent()
