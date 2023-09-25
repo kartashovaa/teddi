@@ -22,7 +22,7 @@ class TestDiffPlugin : Plugin<Project> {
                 // TODO: old extension, probably will become deprecated soon
                 project.extensions.findByType(AppExtension::class.java)
                     ?.applicationVariants
-                    ?.matching { variant -> variant.name !in ext.ignoredVariants.get() }
+                    ?.matching(ext::isAcceptable)
                     ?.all { variant ->
                         TestDiffTask.register(project, variant, changesFile)
                     }
@@ -32,7 +32,7 @@ class TestDiffPlugin : Plugin<Project> {
                 val ext = TestDiffExtension.get(project.rootProject)
                 project.extensions.findByType(LibraryExtension::class.java)
                     ?.libraryVariants
-                    ?.matching { variant -> variant.name !in ext.ignoredVariants.get() }
+                    ?.matching(ext::isAcceptable)
                     ?.all { variant ->
                         TestDiffTask.register(project, variant, changesFile)
                     }
