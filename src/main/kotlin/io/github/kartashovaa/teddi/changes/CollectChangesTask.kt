@@ -61,6 +61,8 @@ abstract class CollectChangesTask : Exec() {
                 task.outputs.upToDateWhen(ChangesUpToDateSpec().asTaskSpec())
                 task.workingDir = project.rootDir
                 task.projectDir = project.projectDir
+                task.fromBlob.set(project.properties["fromBlob"]?.toString().orEmpty())
+                task.toBlob.set(project.properties["toBlob"]?.toString().orEmpty())
             }
     }
 }

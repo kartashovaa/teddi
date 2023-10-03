@@ -163,7 +163,7 @@ class TestDiffTest {
         val result = GradleRunner.create()
             .withProjectDir(projectDir)
             .forwardOutput()
-            .withArguments(":testDiffUnitTest", "--fromBlob=$initialCommit")
+            .withArguments(":testDiffUnitTest", "-PfromBlob=$initialCommit")
             .build()
 
         assertEquals(TaskOutcome.SUCCESS, result.task(":app:testDiffDebugUnitTest")?.outcome)
@@ -231,7 +231,7 @@ class TestDiffTest {
         val result = GradleRunner.create()
             .withProjectDir(projectDir)
             .forwardOutput()
-            .withArguments(":app:testDiffDebugUnitTest", "--fromBlob=HEAD~1")
+            .withArguments(":app:testDiffDebugUnitTest", "-PfromBlob=HEAD~1")
             .build()
 
         assertEquals(TaskOutcome.SUCCESS, result.task(":app:testDiffDebugUnitTest")?.outcome)
@@ -251,7 +251,7 @@ class TestDiffTest {
         val result = GradleRunner.create()
             .withProjectDir(projectDir)
             .forwardOutput()
-            .withArguments(":app:testDiffDebugUnitTest", "--verbose")
+            .withArguments(":app:testDiffDebugUnitTest", "-Pteddi.verbose=true")
             .build()
 
         assertEquals(TaskOutcome.SUCCESS, result.task(":app:testDiffDebugUnitTest")?.outcome)

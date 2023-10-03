@@ -4,7 +4,6 @@ import com.android.build.gradle.api.BaseVariant
 import com.android.builder.core.ComponentType.Companion.UNIT_TEST_PREFIX
 import com.android.builder.core.ComponentType.Companion.UNIT_TEST_SUFFIX
 import io.github.kartashovaa.teddi.changes.ChangesStore
-import io.github.kartashovaa.teddi.options.DiffConstraintsOptionsHandler
 import io.github.kartashovaa.teddi.test.resolver.FilterTestResolver
 import io.github.kartashovaa.teddi.test.resolver.TestResolver
 import io.github.kartashovaa.teddi.test.resolver.UsageTestResolver
@@ -34,7 +33,7 @@ import org.gradle.api.tasks.testing.TestFilter
 import org.gradle.internal.logging.slf4j.DefaultContextAwareTaskLogger
 import javax.inject.Inject
 
-abstract class TestDiffTask : DefaultTask(), OptionsFacade {
+abstract class TestDiffTask : DefaultTask() {
 
     @get:InputFile
     abstract val changesFile: RegularFileProperty
@@ -49,8 +48,6 @@ abstract class TestDiffTask : DefaultTask(), OptionsFacade {
     abstract val objectFactory: ObjectFactory
 
     private var logLevel = LogLevel.INFO
-
-    private val diffOptionsHandler by lazy { DiffConstraintsOptionsHandler(project) }
 
     @TaskAction
     fun testDiff() {
@@ -68,7 +65,7 @@ abstract class TestDiffTask : DefaultTask(), OptionsFacade {
         delegate = UsageTestResolver(AsmUsageCollector(), testClassesDirs.get())
     )
 
-    override fun setVerbose(isVerbose: Boolean) {
+    private fun setVerbose(isVerbose: Boolean) {
         logLevel = if (isVerbose) LogLevel.LIFECYCLE else LogLevel.INFO
     }
 
@@ -92,10 +89,6 @@ abstract class TestDiffTask : DefaultTask(), OptionsFacade {
             changes.joinToString(prefix = "[$TAG] Acquired changes:\n{\n\t", separator = "\n\t", postfix = "\n}")
         )
     }
-
-    override fun setFromBlob(fromBlob: String) = diffOptionsHandler.setFromBlob(fromBlob)
-
-    override fun setToBlob(toBlob: String) = diffOptionsHandler.setToBlob(toBlob)
 
     companion object {
 
@@ -127,6 +120,7 @@ abstract class TestDiffTask : DefaultTask(), OptionsFacade {
             changesFile.set(changesFileProvider)
             testClassesDirs.set(delegate.testClassesDirs.asFileTree)
             filter.set(delegate.filter)
+            setVerbose(project.properties["teddi.verbose"]?.toString().toBoolean())
             dependsOn(delegate.classpath)
             delegate.dependsOn(this) // cancel running delegate if this task failed
             delegate.onlyIf(OnlyIfHasFiltersSpec())

@@ -4,41 +4,7 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskProvider
 
-abstract class TestDiffRootTask : DefaultTask(), OptionsFacade {
-
-    private var fromBlob: String = ""
-    private var toBlob: String = ""
-    private var isVerbose = false
-
-    private val testTasks by lazy {
-        taskDependencies.getDependencies(this)
-            .filterIsInstance<TestDiffTask>()
-    }
-
-    override fun setFromBlob(fromBlob: String) {
-        this.fromBlob = fromBlob
-        copyOptionsToDependencies()
-    }
-
-    override fun setToBlob(toBlob: String) {
-        this.toBlob = toBlob
-        copyOptionsToDependencies()
-    }
-
-    override fun setVerbose(isVerbose: Boolean) {
-        this.isVerbose = isVerbose
-        copyOptionsToDependencies()
-    }
-
-    private fun copyOptionsToDependencies() {
-        testTasks.forEach(::copyOptionsTo)
-    }
-
-    private fun copyOptionsTo(facade: TestDiffTask) {
-        facade.setFromBlob(fromBlob)
-        facade.setToBlob(toBlob)
-        facade.setVerbose(isVerbose)
-    }
+abstract class TestDiffRootTask : DefaultTask() {
 
     companion object {
 
