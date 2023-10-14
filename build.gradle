@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "io.github.kartashovaa"
-version = "0.0.6-SNAPSHOT"
+version = "0.0.6"
 
 def integrationSourceSet = sourceSets.create("integrationTest")
 tasks.register("testIntegrationTest", Test) {
