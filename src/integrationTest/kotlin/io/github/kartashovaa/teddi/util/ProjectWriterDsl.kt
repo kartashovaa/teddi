@@ -21,6 +21,7 @@ fun TeddiProjectWriter.createMinimalSubProject(name: String): TeddiProjectWriter
 fun TeddiProjectWriter.createAndroidApplicationModule(
     name: String = "app",
     dependencies: List<String> = emptyList(),
+    @Language("groovy")
     extraConfiguration: String = ""
 ): TeddiProjectWriter {
     return createMinimalSubProject(name).apply {
