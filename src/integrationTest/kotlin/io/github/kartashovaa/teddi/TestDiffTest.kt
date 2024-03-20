@@ -264,7 +264,13 @@ class TestDiffTest {
     @Test
     fun testDoesNotAffectedByPluginDirectly() {
         project.createMinimalRootProject()
-        val app = project.createAndroidApplicationModule(name = "app")
+        val app = project.createAndroidApplicationModule(
+            name = "app",
+            extraConfiguration = """
+                tasks.all { /* trigger all task configuration */ }
+            """.trimIndent()
+        )
+
         app.kotlin("com.example.app.MainViewModel", DEFAULT_VIEW_MODEL_CONTENT)
         app.kotlin("com.example.app.MainViewModelTest", DEFAULT_VIEWMODEL_TEST_CONTENT, "test")
 

@@ -122,10 +122,12 @@ abstract class TestDiffTask : DefaultTask() {
             filter.set(delegate.filter)
             setVerbose(project.properties["teddi.verbose"]?.toString().toBoolean())
             dependsOn(delegate.classpath)
-            delegate.dependsOn(this) // cancel running delegate if this task failed
-            delegate.onlyIf(OnlyIfHasFiltersSpec())
             finalizedBy(delegate)
 
+            doFirst {
+                delegate.dependsOn(this) // cancel running delegate if this task failed
+                delegate.onlyIf(OnlyIfHasFiltersSpec())
+            }
             group = delegate.group
             description = "Runs tests for changed files"
             TaskCompat.notCompatibleWithConfigurationCache(
